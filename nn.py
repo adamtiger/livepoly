@@ -9,16 +9,17 @@ train_batch(model, batch, epochs)
 evaluate(model, test_set)
 save_model(model, file_name) # saves the model into a file which is readable for CNTK in CSahrp too
 load_model(file_name)
-
 '''
 
 from keras.models import Sequential
 from keras.layers import Conv2D, LocallyConnected2D
 from keras.optimizers import Adam
+from keras import metrics
 from keras import backend as K
 
-if K.backend() is not 'CNTK':
-    raise AssertionError("Should be CNTK")
+if not(str(K.backend()) == 'cntk'):
+    raise AssertionError("Backend should be CNTK now " + K.backend())
+
 
 def create_model():
 
@@ -32,10 +33,26 @@ def create_model():
 
     opt = Adam(lr=0.0005)
     loss = 'binary_crossentropy'
-    model.compile(loss=loss, optimizer=opt)
+    mtr = [metrics.binary_accuracy]
+    model.compile(loss=loss, optimizer=opt, metrics=mtr)
 
     return model
 
-def train_batch(model, batch, epochs):
+
+def train_batch(model, batch, batch_size, epochs):
+
+    model.fit(batch['image'], batch['is_segmenting'], batch_size=batch_size, epochs=epochs, verbose=0)
+
+
+def evaluate(model, test_set, batch_size):
+
+    return model.evaluate(test_set['image'], test_set['is_segmenting'], batch_size=batch_size, verbose=0)
+
+
+def save_model(model, file_name):
+    pass
+
+
+def load_model(model, file_name):
     pass
 
