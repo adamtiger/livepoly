@@ -30,6 +30,9 @@ class Image:
     def set_segm(self, new_segm):
         self.s = new_segm
 
+    def shape(self):
+        return self.o.shape
+
 
 def generate_random_image(size=(86, 86, 1)):
 

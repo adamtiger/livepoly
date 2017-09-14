@@ -33,15 +33,15 @@ def create_model():
 
     opt = Adam(lr=0.0005)
     loss = 'binary_crossentropy'
-    mtr = [metrics.binary_accuracy]
+    mtr = ['accuracy']
     model.compile(loss=loss, optimizer=opt, metrics=mtr)
 
     return model
 
 
-def train_batch(model, batch, batch_size, epochs):
+def train_batch(model, data_chunk, batch_size, epochs):
 
-    model.fit(batch['image'], batch['is_segmenting'], batch_size=batch_size, epochs=epochs, verbose=0)
+    model.fit(data_chunk['image'], data_chunk['is_segmenting'], batch_size=batch_size, epochs=epochs, verbose=0)
 
 
 def evaluate(model, test_set, batch_size):
