@@ -10,6 +10,8 @@ There are functions for:
 
 import numpy as np
 from scipy import misc
+import nn
+import os
 
 
 class Image:
@@ -19,13 +21,13 @@ class Image:
         self.s = segm
 
     def orig(self):
-        return self.orig
+        return self.o
 
     def set_orig(self, new_orig):
         self.o = new_orig
 
     def segm(self):
-        return self.segm
+        return self.s
 
     def set_segm(self, new_segm):
         self.s = new_segm
@@ -34,7 +36,7 @@ class Image:
         return self.o.shape
 
 
-def generate_random_image(size=(86, 86, 1)):
+def generate_random_image(size=nn.input_size):
 
     image = np.random.random_integers(0, 256, size=size)
 
@@ -42,19 +44,34 @@ def generate_random_image(size=(86, 86, 1)):
 
 
 def read_image(file_name):
-    return misc.imread(file_name, mode='RGB')
+    return misc.imread(file_name, mode='L')
 
 
-def convert_grey(source_image): # (height, width, 3 (RGB))
+def convert_grey(source_image, file_name): # (height, width, 3 (RGB))
 
     h = source_image.shape[0]
     w = source_image.shape[1]
-    img = np.ndarray((h, w, 1))
+    img = np.ndarray((h, w))
     for i in range(h):
         for j in range(w):
             img[i, j] = source_image[i, j, 0] * 299/1000 + source_image[i, j, 1] * 587/1000 + source_image[i, j, 2] * 114/1000
 
-    return img
+    misc.imsave(file_name, img)
+
+
+def converter(folder, new_folder):
+
+    if not os.path.exists(new_folder):
+        os.makedirs(new_folder)
+
+        imgs = os.listdir(folder)
+        paths = [folder + "/" + x for x in imgs]
+        new_paths = [new_folder + "/" + x for x in imgs]
+
+        for i in range(len(paths)):
+            img = misc.imread(paths[i], mode='RGB')
+            new_path = new_paths[i]
+            convert_grey(img, new_path)
 
 
 def crop_out(source_image, position, target_size): # crop a small image around the position
@@ -65,19 +82,28 @@ def crop_out(source_image, position, target_size): # crop a small image around t
     w = position[1] + target_size[1]
 
     if h <= source_image.shape[0] and w <= source_image.shape[1]:
-        img[:,:,:] = source_image[position[0] : h, position[1] : w, :]
+        img[:,:,0] = source_image[position[0] : h, position[1] : w] # here the size independence is violated !!! (perf.)
     else:
         img = None
 
     return img
 
 
+# checks whether the 4 pixels next to each other contains
+# any segmenting pixel, the 'position' is the left top pixel
 def check_segmentation(source_image, position):
 
-    if source_image[position[0], position[1], 0] == 255:
-        return True
+    s1 = source_image[position[0], position[1]] == 255
+    s2 = source_image[position[0] + 1, position[1]] == 255
+    s3 = source_image[position[0], position[1] + 1] == 255
+    s4 = source_image[position[0] + 1, position[1] + 1] == 255
 
-    return False
+    y = np.zeros(nn.output_size, dtype=np.float32)
+
+    if s1 or s2 or s3 or s4:
+        return y + 1
+
+    return y
 
 
 def pop_img(img):
