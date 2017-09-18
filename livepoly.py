@@ -165,7 +165,7 @@ def train_nn():
 
     with open(eval_file_name, "w") as f:
         for item in eval_history:
-            line = "Data: " + str(item[0]) + " " + str(item[1] + "\n")
+            line = "Data: " + str(item[0]) + " " + str(item[1]) + "\n"
             f.write(line)
 
 
