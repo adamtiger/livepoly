@@ -15,6 +15,7 @@ import nn
 
 orig_folder = "orig_imgs"
 new_folder = "imgs"
+model_file_name = "model.cntk"
 
 # create grey scale image at first if it was not done before
 pool.converter(orig_folder, new_folder)
@@ -133,7 +134,6 @@ def train_nn():
     test_sample_num = 16
     batch_size = 16
     epochs = 10
-    model_file_name = "model.cntk"
     eval_file_name = "eval.txt"
 
     def gen_data(images_, sample_num):
@@ -172,5 +172,14 @@ def train_nn():
 # Run the training and precalculations.
 
 train_nn()
+
+# Calculate the weights
+model = nn.create_model()
+nn.load_model(model, model_file_name)
+
+for path in img_paths:
+
+    new_fn = path.replace(".png", "_w.json")
+    calculate_weights(model, path, new_fn)
 
 
