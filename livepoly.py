@@ -73,6 +73,8 @@ def calculate_weights(model, file_name, output_file_name):
     x = nn.TrainData(32)
     cntr = 0
     coords = []
+    
+    max_iter = output_shape[0] * output_shape[1]
 
     for c in range(output_shape[1]):
         for r in range(output_shape[0]):
@@ -84,8 +86,12 @@ def calculate_weights(model, file_name, output_file_name):
             x.add(chunk_x, chunk_y)
 
             cntr += 1
+
+            if cntr % 2000 == 0:
+                print("Iteration at: " + str(cntr) + " / " + str(max_iter))
+
             if cntr % 32 == 0:
-                result = model.predict(x, batch_size=32)
+                result = model.predict(x.get_x(), batch_size=32)
 
                 b = 0
                 for cr in coords:
@@ -95,13 +101,14 @@ def calculate_weights(model, file_name, output_file_name):
                 coords.clear()
                 x.clear()
 
-    result = model.predict(x, batch_size=32)
+    result = model.predict(x.get_x(), batch_size=32)
 
     b = 0
     for cr in coords:
         output[cr[0] + nn.input_size[0] - 1, cr[1] + nn.input_size[1] - 1] = result[b, :, :, 0]
         b += 1
-
+    
+    print("Saving result to json.")
     json_string = json.dumps(output.tolist())
 
     with open(output_file_name, "w") as f:
@@ -171,14 +178,15 @@ def train_nn():
 
 # Run the training and precalculations.
 
-train_nn()
+#train_nn()
 
 # Calculate the weights
 model = nn.create_model()
 nn.load_model(model, model_file_name)
 
-for path in img_paths:
+for idx in range(0, len(img_paths), 2):
 
+    path = img_paths[idx]
     new_fn = path.replace(".png", "_w.json")
     calculate_weights(model, path, new_fn)
 
