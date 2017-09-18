@@ -178,16 +178,19 @@ def train_nn():
 
 # Run the training and precalculations.
 
-#train_nn()
+train_nn()
 
 # Calculate the weights
-model = nn.create_model()
-nn.load_model(model, model_file_name)
+step_in = False
+if step_in:
 
-for idx in range(0, len(img_paths), 2):
+    model = nn.create_model()
+    nn.load_model(model, model_file_name)
 
-    path = img_paths[idx]
-    new_fn = path.replace(".png", "_w.json")
-    calculate_weights(model, path, new_fn)
+    for idx in range(0, len(img_paths), 2):
+
+        path = img_paths[idx]
+        new_fn = path.replace(".png", "_w.json")
+        calculate_weights(model, path, new_fn)
 
 
