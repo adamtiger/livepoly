@@ -5,6 +5,7 @@ This module is for managing the whole training process for live-polyline.
 
 import os
 import random
+import json
 import pool
 import numpy as np
 import nn
@@ -60,6 +61,50 @@ def generate_samples(image, number):
         samples.add(x, y)
 
     return samples
+
+
+def calculate_weights(model, file_name, output_file_name):
+
+    img = pool.read_image(file_name)
+    output_shape = (img.shape[0] - nn.input_size[0] + 1, img.shape[1] - nn.input_size[1] + 1)
+    output = np.zeros(img.shape)
+
+    x = nn.TrainData(32)
+    cntr = 0
+    coords = []
+
+    for c in range(output_shape[1]):
+        for r in range(output_shape[0]):
+
+            coords.append((r, c))
+
+            chunk_x = pool.crop_out(img, (r, c), nn.input_size)
+            chunk_y = np.zeros(nn.output_size)
+            x.add(chunk_x, chunk_y)
+
+            cntr += 1
+            if cntr % 32 == 0:
+                result = model.predict(x, batch_size=32)
+
+                b = 0
+                for cr in coords:
+                    output[cr[0] + nn.input_size[0] - 1, cr[1] + nn.input_size[1] - 1] = result[b, :, :, 0]
+                    b += 1
+
+                coords.clear()
+                x.clear()
+
+    result = model.predict(x, batch_size=32)
+
+    b = 0
+    for cr in coords:
+        output[cr[0] + nn.input_size[0] - 1, cr[1] + nn.input_size[1] - 1] = result[b, :, :, 0]
+        b += 1
+
+    json_string = json.dumps(output.tolist())
+
+    with open(output_file_name, "w") as f:
+        f.write(json_string)
 
 
 # test running neural network
@@ -123,6 +168,8 @@ def train_nn():
             line = "Data: " + str(item[0]) + " " + str(item[1] + "\n")
             f.write(line)
 
+
+# Run the training and precalculations.
 
 train_nn()
 

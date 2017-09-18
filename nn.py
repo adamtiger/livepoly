@@ -33,7 +33,7 @@ def create_model():
     model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
     model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
     model.add(Conv2D(64, (3, 3), strides=(3, 3), padding='VALID', activation='relu'))
-    model.add(Conv2D(1, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
+    model.add(Conv2D(1, (9, 9), strides=(1, 1), padding='VALID', activation='tanh'))
 
     opt = Adam(lr=0.0005)
     loss = 'binary_crossentropy'
@@ -72,6 +72,12 @@ class TrainData:
         self.data['sgm'][self.idx, :, :, :] = chunk_y[:, :, :]
         self.idx += 1
 
+    def clear(self):
+        self.idx = 0
+
+    def get_idx(self):
+        return self.idx
+
 
 def train_batch(model, data_chunk, batch_size, epochs):
 
@@ -84,9 +90,9 @@ def evaluate(model, test_set, batch_size):
 
 
 def save_model(model, file_name):
-    pass
+    model.save_weights(file_name)
 
 
 def load_model(model, file_name):
-    pass
+    model.load_weights(file_name)
 
