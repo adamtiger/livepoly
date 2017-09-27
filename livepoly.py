@@ -23,6 +23,7 @@ pool.converter(orig_folder, new_folder)
 img_names = os.listdir(new_folder)
 img_paths = [new_folder + "/" + x for x in img_names]
 
+print (img_paths)
 
 def choose_random_images(number):
 
@@ -135,11 +136,11 @@ def test_nn():
 def train_nn():
 
     # parameters
-    iteration = 10
+    iteration = 100000
     images_num = 1
-    training_sample_num = 16
+    training_sample_num = 64
     test_sample_num = 16
-    batch_size = 16
+    batch_size = 32
     epochs = 10
     eval_file_name = "eval.txt"
 
@@ -155,16 +156,17 @@ def train_nn():
     model = nn.create_model()
 
     eval_history = []
+    print ("Training started.")
 
     for i in range(iteration):
-        print("Currently at: " + str(i))
+        if i % 500 == 0:
+            print("Currently at: " + str(i))
         images = choose_random_images(images_num)
         data_chunk = gen_data(images, training_sample_num)
 
-        print("data was generated")
         nn.train_batch(model, data_chunk, batch_size, epochs)
 
-        if i % 5 == 0:
+        if i % 100 == 0:
             test_set = gen_data(images, test_sample_num)
             eval_history.append(nn.evaluate(model, test_set, batch_size))
 
@@ -175,6 +177,8 @@ def train_nn():
             line = "Data: " + str(item[0]) + " " + str(item[1]) + "\n"
             f.write(line)
 
+
+#test_nn()
 
 # Run the training and precalculations.
 

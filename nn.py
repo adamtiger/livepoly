@@ -17,8 +17,7 @@ from keras.optimizers import Adam
 from keras import backend as K
 import numpy as np
 
-if not(str(K.backend()) == 'cntk'):
-    raise AssertionError("Backend should be CNTK now " + K.backend())
+
 
 input_size = (86, 86, 1)
 output_size = (1, 1, 1)
