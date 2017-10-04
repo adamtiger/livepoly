@@ -28,7 +28,7 @@ print (img_paths)
 def choose_random_images(number):
 
     images = []
-    num_images = int(len(img_paths) / 2)
+    num_images = len(img_paths)
     r_list = [x for x in range(num_images)]
 
     if number > num_images:
@@ -39,26 +39,50 @@ def choose_random_images(number):
         img_idx = r_list[r]
         num_images -= 1
         r_list.remove(r_list[r])
+        
+        o_idx = 0
+        if img_idx % 2 == 0:
+            o_idx = img_idx
+        else:
+            o_idx = img_idx - 1
 
-        img_orig = pool.read_image(img_paths[img_idx])
-        img_segm = pool.read_image(img_paths[img_idx+1])
+        img_orig = pool.read_image(img_paths[o_idx])
+        img_segm = pool.read_image(img_paths[o_idx+1])
 
         images.append(pool.Image(img_orig, img_segm))
 
     return images
 
+'''
+ This function creates balanced samples.
+ Meaning: the frequency of the bad and good
+  samples are the same. 
+ Intution: if it weren't for this way
+  almost all the generated samples would
+  be the bad sample.
+'''
 
 def generate_samples(image, number):
 
     h = nn.input_size[0]
     w = nn.input_size[1]
-    samples = nn.TrainData(number)
+    samples = nn.TrainData(number*2)
 
     for i in range(number):
 
+        # Choosing random point in the image.
         position = (random.randint(0, image.shape()[0] - (h + 1)), random.randint(0, image.shape()[1] - (w + 1)))
         x = pool.crop_out(image.orig(), position, nn.input_size)
         y = pool.check_segmentation(image.segm(), (position[0] + int(h/2) - 1, position[1] + int(w/2) - 1))
+
+        samples.add(x, y)
+
+        # Choosing a point which is on the segmenting curve.
+        pts = image.get_segm_pts_list()
+        rand_idx = random.randint(0, len(pts)-1)
+        position = (pts[rand_idx][0] - int(h/2), pts[rand_idx][1] - int(w/2))
+        x = pool.crop_out(image.orig(), position, nn.input_size)
+        y = pool.check_segmentation(image.segm(), (pts[rand_idx][0], pts[rand_idx][1]))
 
         samples.add(x, y)
 
@@ -138,7 +162,7 @@ def train_nn():
     # parameters
     iteration = 100000
     images_num = 1
-    training_sample_num = 64
+    training_sample_num = 32
     test_sample_num = 16
     batch_size = 32
     epochs = 10
@@ -146,7 +170,7 @@ def train_nn():
 
     def gen_data(images_, sample_num):
 
-        chunk = nn.TrainData(images_num * sample_num)
+        chunk = nn.TrainData(images_num * sample_num * 2)
         for i in range(len(images_)):
             samples = generate_samples(images_[i], sample_num)
             chunk.append(samples)

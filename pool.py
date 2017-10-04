@@ -19,6 +19,7 @@ class Image:
     def __init__(self, orig, segm):
         self.o = orig
         self.s = segm
+        self.__find_segmenting_points()
 
     def orig(self):
         return self.o
@@ -34,6 +35,18 @@ class Image:
 
     def shape(self):
         return self.o.shape
+
+    def get_segm_pts_list(self):
+        return self.segm_pts
+
+    def __find_segmenting_points(self):
+        
+        self.segm_pts = []
+        for row in range(int(nn.input_size[0]/2), self.s.shape[0] - int(nn.input_size[0]/2) - 1):
+            for col in range(int(nn.input_size[1]/2), self.s.shape[1] - int(nn.input_size[1]/2) - 1):
+                if self.s[row, col] == 255:
+                    self.segm_pts.append((row, col))
+
 
 
 def generate_random_image(size=nn.input_size):

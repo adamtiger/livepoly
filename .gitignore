@@ -10,6 +10,7 @@
 *.cntk
 *.tar.gz
 *.gz
+.nf*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
