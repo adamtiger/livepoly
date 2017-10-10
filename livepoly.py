@@ -21,9 +21,10 @@ model_file_name = "model.cntk"
 pool.converter(orig_folder, new_folder)
 
 img_names = os.listdir(new_folder)
-img_paths = [new_folder + "/" + x for x in img_names]
+img_paths = [new_folder + "/" + t for t in img_names]
 
 print (img_paths)
+
 
 def choose_random_images(number):
 
@@ -53,6 +54,7 @@ def choose_random_images(number):
 
     return images
 
+
 '''
  This function creates balanced samples.
  Meaning: the frequency of the bad and good
@@ -66,23 +68,35 @@ def generate_samples(image, number):
 
     h = nn.input_size[0]
     w = nn.input_size[1]
-    samples = nn.TrainData(number*2)
+    samples = nn.TrainData(number)
+
+    # Choosing random point in the image.
+    def random_point_on_image():
+        position = (random.randint(0, image.shape()[0] - (h + 1)), random.randint(0, image.shape()[1] - (w + 1)))
+        x = pool.crop_out(image.orig(), position, nn.input_size)
+        y = pool.check_segmentation(image.segm(), (position[0] + int(h / 2) - 1, position[1] + int(w / 2) - 1))
+
+        return x, y
+
+    # Choosing a point which is on the segmenting curve.
+    def random_point_on_segmenting():
+        pts = image.get_segm_pts_list()
+        rand_idx = random.randint(0, len(pts) - 1)
+        position = (pts[rand_idx][0] - int(h / 2), pts[rand_idx][1] - int(w / 2))
+        x = pool.crop_out(image.orig(), position, nn.input_size)
+        y = pool.check_segmentation(image.segm(), (pts[rand_idx][0], pts[rand_idx][1]))
+
+        return x, y
 
     for i in range(number):
 
-        # Choosing random point in the image.
-        position = (random.randint(0, image.shape()[0] - (h + 1)), random.randint(0, image.shape()[1] - (w + 1)))
-        x = pool.crop_out(image.orig(), position, nn.input_size)
-        y = pool.check_segmentation(image.segm(), (position[0] + int(h/2) - 1, position[1] + int(w/2) - 1))
-
-        samples.add(x, y)
-
-        # Choosing a point which is on the segmenting curve.
-        pts = image.get_segm_pts_list()
-        rand_idx = random.randint(0, len(pts)-1)
-        position = (pts[rand_idx][0] - int(h/2), pts[rand_idx][1] - int(w/2))
-        x = pool.crop_out(image.orig(), position, nn.input_size)
-        y = pool.check_segmentation(image.segm(), (pts[rand_idx][0], pts[rand_idx][1]))
+        r = random.randint(0, 1)
+        x = 0
+        y = 0
+        if r == 1:
+            x, y = random_point_on_image()
+        else:
+            x, y = random_point_on_segmenting()
 
         samples.add(x, y)
 
@@ -160,7 +174,7 @@ def test_nn():
 def train_nn():
 
     # parameters
-    iteration = 100000
+    iteration = 20000
     images_num = 1
     training_sample_num = 32
     test_sample_num = 16
@@ -170,7 +184,7 @@ def train_nn():
 
     def gen_data(images_, sample_num):
 
-        chunk = nn.TrainData(images_num * sample_num * 2)
+        chunk = nn.TrainData(images_num * sample_num)
         for i in range(len(images_)):
             samples = generate_samples(images_[i], sample_num)
             chunk.append(samples)

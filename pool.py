@@ -48,7 +48,6 @@ class Image:
                     self.segm_pts.append((row, col))
 
 
-
 def generate_random_image(size=nn.input_size):
 
     image = np.random.random_integers(0, 256, size=size)
