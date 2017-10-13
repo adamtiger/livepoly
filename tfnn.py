@@ -18,18 +18,40 @@ import tensorflow as tf
 import numpy as np
 
 
-
 input_size = (86, 86, 1)
 output_size = (1, 1, 1)
 
+'''
+model.add(LocallyConnected2D(1, (2, 2), strides=(2, 2), padding='VALID', use_bias=False, input_shape=input_size))
+model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
+model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
+model.add(Conv2D(64, (3, 3), strides=(3, 3), padding='VALID', activation='relu'))
+model.add(Conv2D(1, (9, 9), strides=(1, 1), padding='VALID', activation='tanh'))
+'''
 
 def create_model():
 
-   model = []
+    input_variable = tf.placeholder(tf.float32, shape=(None, input_size[0], input_size[1], input_size[2]))
+    weights = 0
 
+    def w(k_h, k_w, channels, filters):
+        init = tf.truncated_normal([k_h, k_w, channels, filters], stddev=0.1)
+        return tf.Variable(init)
 
+    def b(filters):
+        init = tf.constant(0.1, shape=[filters])
+        return tf.Variable(init)
 
-   return model
+    def locally_conv_2d(filters, k_size, strides, input_variable, weights):
+        return 0
+
+    locally = locally_conv_2d(1, (2, 2), (2, 2), input_variable, weights)
+    conv1 = tf.nn.relu(tf.nn.conv2d(locally, w(9, 9, 1, 32), padding='SAME', strides=[1, 1, 1, 1]) + b(32))
+    conv2 = tf.nn.relu(tf.nn.conv2d(conv1, w(9, 9, 32, 32), padding='SAME', strides=[1, 1, 1, 1]) + b(32))
+    conv3 = tf.nn.relu(tf.nn.conv2d(conv2, w(9, 9, 32, 64), padding='SAME', strides=[1, 3, 3, 1]) + b(64))
+    conv4 = tf.nn.tanh(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='SAME', strides=[1, 1, 1, 1]) + b(1))
+
+    return conv4
 
 
 class TrainData:
