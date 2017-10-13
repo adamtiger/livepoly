@@ -8,14 +8,34 @@ import random
 import json
 import pool
 import numpy as np
-import nn
+import kerasnn as nn
+import argparse
+
+parser = argparse.ArgumentParser(description="Live-poyline training algorithm")
+
+parser.add_argument("--iteration", type=int, default=1, metavar='N',
+                    help='the number of overall iterations (including sample generation)')
+parser.add_argument("--images-num", type=int, default=1, metavar='N',
+                    help="the number of images to use at once for generation")
+parser.add_argument("--training-sample-num", type=int, default=16, metavar='N',
+                    help="the number of samples to use for a training episode")
+parser.add_argument("--test-sample-num", type=int, default=8, metavar='N',
+                    help="the number of samples to use for testing")
+parser.add_argument("--batch-size", type=int, default=8, metavar='N',
+                    help="traditional batch size")
+parser.add_argument("--epochs", type=int, default=1, metavar='N',
+                    help="traditional epoch")
+parser.add_argument("--eval-file-name", default="eval.csv", metavar='S',
+                    help="the name of the file ")
+
+args = parser.parse_args()
 
 # discover the folder structure and find images
 # file name with ending '_orig' is the original version
 
 orig_folder = "orig_imgs"
 new_folder = "imgs"
-model_file_name = "model.cntk"
+model_file_name = "model.h5"
 
 # create grey scale image at first if it was not done before
 pool.converter(orig_folder, new_folder)
@@ -23,7 +43,7 @@ pool.converter(orig_folder, new_folder)
 img_names = os.listdir(new_folder)
 img_paths = [new_folder + "/" + t for t in img_names]
 
-print (img_paths)
+print(img_paths)
 
 
 def choose_random_images(number):
@@ -174,13 +194,32 @@ def test_nn():
 def train_nn():
 
     # parameters
-    iteration = 20000
-    images_num = 1
-    training_sample_num = 32
-    test_sample_num = 16
-    batch_size = 32
-    epochs = 10
-    eval_file_name = "eval.txt"
+    iteration = args.iteration
+    images_num = args.images_num
+    training_sample_num = args.training_sample_num
+    test_sample_num = args.test_sample_num
+    batch_size = args.batch_size
+    epochs = args.epochs
+    eval_file_name = args.eval_file_name
+
+    eval_history = []
+    model = nn.create_model()
+
+    with open(eval_file_name, "w") as f:
+        line = "iteration: " + str(iteration)
+        line += " images_num: " + str(images_num)
+        line += " training_sample_num: " + str(training_sample_num)
+        line += " test_sample_num: " + str(test_sample_num)
+        line += " batch_size: " + str(batch_size)
+        line += " epochs: " + str(epochs)
+        line += " eval_file_name: " + eval_file_name
+        f.write(line + '\n')
+
+        line = ""
+        for item in nn.metrics_names(model):
+            line += item + " "
+        line += "iteration "
+        f.write(line + "\n")
 
     def gen_data(images_, sample_num):
 
@@ -191,14 +230,24 @@ def train_nn():
 
         return chunk
 
-    model = nn.create_model()
+    def save_test_results():
 
-    eval_history = []
-    print ("Training started.")
+        with open(eval_file_name, "a") as f:
+            for item in eval_history:
+                line = ""
+                for e in item:
+                    line += str(e) + " "
+                line + '\n'
+                f.write(line)
+        eval_history.clear()
+
+    print("Training started.")
 
     for i in range(iteration):
+
         if i % 500 == 0:
             print("Currently at: " + str(i))
+
         images = choose_random_images(images_num)
         data_chunk = gen_data(images, training_sample_num)
 
@@ -206,20 +255,21 @@ def train_nn():
 
         if i % 100 == 0:
             test_set = gen_data(images, test_sample_num)
-            eval_history.append(nn.evaluate(model, test_set, batch_size))
+            result = nn.evaluate(model, test_set, batch_size)
+            result.append(i)
+            eval_history.append(result)
+
+        if i % 1000:
+            save_test_results()
 
     nn.save_model(model, model_file_name)
 
-    with open(eval_file_name, "w") as f:
-        for item in eval_history:
-            line = "Data: " + str(item[0]) + " " + str(item[1]) + "\n"
-            f.write(line)
+    save_test_results()
 
 
 #test_nn()
 
 # Run the training and precalculations.
-
 train_nn()
 
 # Calculate the weights

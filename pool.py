@@ -10,7 +10,7 @@ There are functions for:
 
 import numpy as np
 from scipy import misc
-import nn
+import kerasnn
 import os
 
 
@@ -42,13 +42,13 @@ class Image:
     def __find_segmenting_points(self):
         
         self.segm_pts = []
-        for row in range(int(nn.input_size[0]/2), self.s.shape[0] - int(nn.input_size[0]/2) - 1):
-            for col in range(int(nn.input_size[1]/2), self.s.shape[1] - int(nn.input_size[1]/2) - 1):
+        for row in range(int(kerasnn.input_size[0]/2), self.s.shape[0] - int(kerasnn.input_size[0]/2) - 1):
+            for col in range(int(kerasnn.input_size[1]/2), self.s.shape[1] - int(kerasnn.input_size[1]/2) - 1):
                 if self.s[row, col] == 255:
                     self.segm_pts.append((row, col))
 
 
-def generate_random_image(size=nn.input_size):
+def generate_random_image(size=kerasnn.input_size):
 
     image = np.random.random_integers(0, 256, size=size)
 
@@ -110,7 +110,7 @@ def check_segmentation(source_image, position):
     s3 = source_image[position[0], position[1] + 1] == 255
     s4 = source_image[position[0] + 1, position[1] + 1] == 255
 
-    y = np.zeros(nn.output_size, dtype=np.float32)
+    y = np.zeros(kerasnn.output_size, dtype=np.float32)
 
     if s1 or s2 or s3 or s4:
         return y + 1

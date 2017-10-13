@@ -11,6 +11,8 @@
 *.tar.gz
 *.gz
 .nf*
+*.h5
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

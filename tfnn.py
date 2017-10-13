@@ -1,6 +1,9 @@
 '''
 This module is for creating the network model.
 Training and evaluation is provided.
+The implementation is in TensorFlow.
+It differs from the Keras one because
+the first layer will not be trained.
 
 Functions:
 
@@ -11,10 +14,7 @@ save_model(model, file_name) # saves the model into a file which is readable for
 load_model(file_name)
 '''
 
-from keras.models import Sequential
-from keras.layers import Conv2D, LocallyConnected2D
-from keras.optimizers import Adam
-from keras import backend as K
+import tensorflow as tf
 import numpy as np
 
 
@@ -25,21 +25,11 @@ output_size = (1, 1, 1)
 
 def create_model():
 
-    model = Sequential()
+   model = []
 
-    # The input is a numpy array (!) with shape (batch, height, width, channel)
-    model.add(LocallyConnected2D(1, (2, 2), strides=(2, 2), padding='VALID', use_bias=False, input_shape=input_size))
-    model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
-    model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
-    model.add(Conv2D(64, (3, 3), strides=(3, 3), padding='VALID', activation='relu'))
-    model.add(Conv2D(1, (9, 9), strides=(1, 1), padding='VALID', activation='tanh'))
 
-    opt = Adam(lr=0.0005)
-    loss = 'binary_crossentropy'
-    mtr = ['accuracy']
-    model.compile(loss=loss, optimizer=opt, metrics=mtr)
 
-    return model
+   return model
 
 
 class TrainData:
@@ -78,20 +68,21 @@ class TrainData:
         return self.idx
 
 
-def train_batch(model, data_chunk, batch_size, epochs):
+def metrics_names(model):
+    raise NotImplementedError()
 
-    model.fit(data_chunk.get_x(), data_chunk.get_y(), batch_size=batch_size, epochs=epochs, verbose=0)
+
+def train_batch(model, data_chunk, batch_size, epochs):
+    raise NotImplementedError()
 
 
 def evaluate(model, test_set, batch_size):
-
-    return model.evaluate(test_set.get_x() , test_set.get_y(), batch_size=batch_size, verbose=0)
+    raise NotImplementedError()
 
 
 def save_model(model, file_name):
-    model.save_weights(file_name)
+    raise NotImplementedError()
 
 
 def load_model(model, file_name):
-    model.load_weights(file_name)
-
+    raise NotImplementedError()
