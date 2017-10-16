@@ -13,6 +13,8 @@
 .nf*
 *.h5
 *.csv
+*.ckpt.*
+checkpoint
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

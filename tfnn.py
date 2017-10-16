@@ -22,6 +22,7 @@ input_size = (86, 86, 1)
 output_size = (1, 1, 1)
 
 '''
+The Keras equivalent of the model:
 model.add(LocallyConnected2D(1, (2, 2), strides=(2, 2), padding='VALID', use_bias=False, input_shape=input_size))
 model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
 model.add(Conv2D(32, (9, 9), strides=(1, 1), padding='VALID', activation='relu'))
@@ -29,10 +30,13 @@ model.add(Conv2D(64, (3, 3), strides=(3, 3), padding='VALID', activation='relu')
 model.add(Conv2D(1, (9, 9), strides=(1, 1), padding='VALID', activation='tanh'))
 '''
 
+
 def create_model():
 
+    model = {}
+
     input_variable = tf.placeholder(tf.float32, shape=(None, input_size[0], input_size[1], input_size[2]))
-    weights = 0
+    weights = tf.constant(1.0, tf.float32, shape=(1, input_size[0], input_size[1], input_size[2]))
 
     def w(k_h, k_w, channels, filters):
         init = tf.truncated_normal([k_h, k_w, channels, filters], stddev=0.1)
@@ -42,16 +46,43 @@ def create_model():
         init = tf.constant(0.1, shape=[filters])
         return tf.Variable(init)
 
-    def locally_conv_2d(filters, k_size, strides, input_variable, weights):
-        return 0
+    # Special function for the 2x2 local kernels with strides (2, 2)
+    # tf.multiply executes an element-wise multiplication
+    # convolution with [[1, 1], [1, 1]] kernel does summation.
+    def locally_conv_2d(input_variable, weights):
 
-    locally = locally_conv_2d(1, (2, 2), (2, 2), input_variable, weights)
-    conv1 = tf.nn.relu(tf.nn.conv2d(locally, w(9, 9, 1, 32), padding='SAME', strides=[1, 1, 1, 1]) + b(32))
-    conv2 = tf.nn.relu(tf.nn.conv2d(conv1, w(9, 9, 32, 32), padding='SAME', strides=[1, 1, 1, 1]) + b(32))
-    conv3 = tf.nn.relu(tf.nn.conv2d(conv2, w(9, 9, 32, 64), padding='SAME', strides=[1, 3, 3, 1]) + b(64))
-    conv4 = tf.nn.tanh(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='SAME', strides=[1, 1, 1, 1]) + b(1))
+        fixed_weights = tf.constant(1.0, dtype=tf.float32, shape=(2, 2, input_size[2], 1))
 
-    return conv4
+        multiply1 = tf.multiply(input_variable, weights)
+        locally1 = tf.nn.conv2d(multiply1, fixed_weights, padding='SAME', strides=[1, 2, 2, 1])
+
+        return locally1
+
+    locally = locally_conv_2d(input_variable, weights)
+    conv1 = tf.nn.relu(tf.nn.conv2d(locally, w(9, 9, 1, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
+    conv2 = tf.nn.relu(tf.nn.conv2d(conv1, w(9, 9, 32, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
+    conv3 = tf.nn.relu(tf.nn.conv2d(conv2, w(3, 3, 32, 64), padding='VALID', strides=[1, 3, 3, 1]) + b(64))
+    conv4 = tf.nn.sigmoid(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='VALID', strides=[1, 1, 1, 1]) + b(1))
+
+    correct = tf.placeholder(tf.int32, shape=(None, output_size[0], output_size[1], output_size[2]))
+    loss = tf.losses.mean_squared_error(labels=correct, predictions=conv4)
+    train_step = tf.train.AdamOptimizer(1e-3).minimize(loss)
+
+    correct_prediction = tf.equal(tf.argmax(conv4, 1), tf.argmax(correct, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+    sess = tf.Session()
+    sess.run(tf.global_variables_initializer())
+
+    model['sess'] = sess
+    model['forward'] = conv4
+    model['train'] = train_step
+    model['loss'] = loss
+    model['acc'] = accuracy
+    model['x'] = input_variable
+    model['y'] = correct
+
+    return model
 
 
 class TrainData:
@@ -91,19 +122,29 @@ class TrainData:
 
 
 def metrics_names(model):
-    raise NotImplementedError()
+    return ["train_loss", "train_acc", "test_loss", "test_acc"]
 
 
 def train_batch(model, data_chunk, batch_size, epochs):
-    raise NotImplementedError()
+    for epoch in range(epochs):
+        model['train'].run(session=model['sess'], feed_dict={model['x']: data_chunk.get_x(), model['y']: data_chunk.get_y()})
+    return [0, 0]
 
 
 def evaluate(model, test_set, batch_size):
-    raise NotImplementedError()
+
+    loss = model['loss'].eval(session=model['sess'], feed_dict={model['x']: test_set.get_x(), model['y']: test_set.get_y()})
+    acc = model['acc'].eval(session=model['sess'], feed_dict={model['x']: test_set.get_x(), model['y']: test_set.get_y()})
+    return [loss, acc]
+
+
+def predict(model, x, batch_size):
+    return model['forward'].run(session=model['sess'], feed_dict={model['x']: x})
 
 
 def save_model(model, file_name):
-    raise NotImplementedError()
+    saver = tf.train.Saver()
+    saver.save(model['sess'], file_name)
 
 
 def load_model(model, file_name):

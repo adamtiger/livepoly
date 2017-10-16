@@ -86,7 +86,11 @@ def train_batch(model, data_chunk, batch_size, epochs):
 
 def evaluate(model, test_set, batch_size):
 
-    return model.evaluate(test_set.get_x() , test_set.get_y(), batch_size=batch_size, verbose=0)
+    return model.evaluate(test_set.get_x(), test_set.get_y(), batch_size=batch_size, verbose=0)
+
+
+def predict(model, x, batch_size):
+    return model.predict(x, batch_size)
 
 
 def save_model(model, file_name):

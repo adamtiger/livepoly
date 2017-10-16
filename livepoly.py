@@ -8,7 +8,7 @@ import random
 import json
 import pool
 import numpy as np
-import kerasnn as nn
+import tfnn as nn
 import argparse
 
 parser = argparse.ArgumentParser(description="Live-poyline training algorithm")
@@ -35,7 +35,7 @@ args = parser.parse_args()
 
 orig_folder = "orig_imgs"
 new_folder = "imgs"
-model_file_name = "model.h5"
+model_file_name = "model.ckpt"
 
 # create grey scale image at first if it was not done before
 pool.converter(orig_folder, new_folder)
@@ -150,7 +150,7 @@ def calculate_weights(model, file_name, output_file_name):
                 print("Iteration at: " + str(cntr) + " / " + str(max_iter))
 
             if cntr % 32 == 0:
-                result = model.predict(x.get_x(), batch_size=32)
+                result = nn.predict(model, x.get_x(), batch_size=32)
 
                 b = 0
                 for cr in coords:
@@ -160,7 +160,7 @@ def calculate_weights(model, file_name, output_file_name):
                 coords.clear()
                 x.clear()
 
-    result = model.predict(x.get_x(), batch_size=32)
+    result = nn.predict(model, x.get_x(), batch_size=32)
 
     b = 0
     for cr in coords:
@@ -180,14 +180,14 @@ def test_nn():
 
     model = nn.create_model()
     batch = nn.TrainData(10)
-    y = np.zeros(nn.output_size, dtype=np.float32)
     for i in range(10):
+        y = np.zeros(nn.output_size, dtype=np.float32)
         x = pool.generate_random_image(nn.input_size)
         y += random.randint(0, 1)
         batch.add(x, y)
 
     nn.train_batch(model, batch, 10, 10)
-    print(model.metrics_names)
+    print(nn.metrics_names(model))
     print(nn.evaluate(model, batch, 10))
 
 
@@ -251,11 +251,11 @@ def train_nn():
         images = choose_random_images(images_num)
         data_chunk = gen_data(images, training_sample_num)
 
-        nn.train_batch(model, data_chunk, batch_size, epochs)
+        result = nn.train_batch(model, data_chunk, batch_size, epochs)
 
         if i % 100 == 0:
             test_set = gen_data(images, test_sample_num)
-            result = nn.evaluate(model, test_set, batch_size)
+            result = result + nn.evaluate(model, test_set, batch_size)
             result.append(i)
             eval_history.append(result)
 
