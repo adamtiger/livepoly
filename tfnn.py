@@ -36,7 +36,13 @@ def create_model():
     model = {}
 
     input_variable = tf.placeholder(tf.float32, shape=(None, input_size[0], input_size[1], input_size[2]))
-    weights = tf.constant(1.0, tf.float32, shape=(1, input_size[0], input_size[1], input_size[2]))
+
+    value = np.ones(shape=(1, input_size[0], input_size[1], input_size[2]), dtype=np.float32)
+    value[0, 43, 43, 0] = 10.0
+    value[0, 43, 44, 0] = 10.0
+    value[0, 44, 43, 0] = 10.0
+    value[0, 44, 44, 0] = 10.0
+    weights = tf.constant(value, tf.float32, shape=(1, input_size[0], input_size[1], input_size[2]))
 
     def w(k_h, k_w, channels, filters):
         init = tf.truncated_normal([k_h, k_w, channels, filters], stddev=0.1)
@@ -126,16 +132,19 @@ def metrics_names(model):
 
 
 def train_batch(model, data_chunk, batch_size, epochs):
+    sum_loss = 0.0
+    sum_acc = 0.0
     for epoch in range(epochs):
-        model['train'].run(session=model['sess'], feed_dict={model['x']: data_chunk.get_x(), model['y']: data_chunk.get_y()})
-    return [0, 0]
+        result = model['sess'].run([model['train'], model['loss'], model['acc']], feed_dict={model['x']: data_chunk.get_x(), model['y']: data_chunk.get_y()})
+        sum_loss += result[1]
+        sum_acc += result[2]
+    return [sum_loss/epochs, sum_acc/epochs]
 
 
 def evaluate(model, test_set, batch_size):
 
-    loss = model['loss'].eval(session=model['sess'], feed_dict={model['x']: test_set.get_x(), model['y']: test_set.get_y()})
-    acc = model['acc'].eval(session=model['sess'], feed_dict={model['x']: test_set.get_x(), model['y']: test_set.get_y()})
-    return [loss, acc]
+    evals = model['sess'].run([model['loss'], model['acc']], feed_dict={model['x']: test_set.get_x(), model['y']: test_set.get_y()})
+    return [evals[0], evals[1]]
 
 
 def predict(model, x, batch_size):
