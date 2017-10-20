@@ -9,11 +9,12 @@ import json
 import pool
 import numpy as np
 import tfnn as nn
+import utils as u
 import argparse
 
 parser = argparse.ArgumentParser(description="Live-poyline training algorithm")
 
-parser.add_argument("--iteration", type=int, default=1, metavar='N',
+parser.add_argument("--iteration", type=int, default=5, metavar='N',
                     help='the number of overall iterations (including sample generation)')
 parser.add_argument("--images-num", type=int, default=1, metavar='N',
                     help="the number of images to use at once for generation")
@@ -86,14 +87,14 @@ def choose_random_images(number):
 
 def generate_samples(image, number):
 
-    h = nn.input_size[0]
-    w = nn.input_size[1]
-    samples = nn.TrainData(number)
+    h = u.input_size[0]
+    w = u.input_size[1]
+    samples = u.TrainData(number)
 
     # Choosing random point in the image.
     def random_point_on_image():
         position = (random.randint(0, image.shape()[0] - (h + 1)), random.randint(0, image.shape()[1] - (w + 1)))
-        x = pool.crop_out(image.orig(), position, nn.input_size)
+        x = pool.crop_out(image.orig(), position, u.input_size)
         y = pool.check_segmentation(image.segm(), (position[0] + int(h / 2) - 1, position[1] + int(w / 2) - 1))
 
         return x, y
@@ -103,7 +104,7 @@ def generate_samples(image, number):
         pts = image.get_segm_pts_list()
         rand_idx = random.randint(0, len(pts) - 1)
         position = (pts[rand_idx][0] - int(h / 2), pts[rand_idx][1] - int(w / 2))
-        x = pool.crop_out(image.orig(), position, nn.input_size)
+        x = pool.crop_out(image.orig(), position, u.input_size)
         y = pool.check_segmentation(image.segm(), (pts[rand_idx][0], pts[rand_idx][1]))
 
         return x, y
@@ -126,10 +127,10 @@ def generate_samples(image, number):
 def calculate_weights(model, file_name, output_file_name):
 
     img = pool.read_image(file_name)
-    output_shape = (img.shape[0] - nn.input_size[0] + 1, img.shape[1] - nn.input_size[1] + 1)
+    output_shape = (img.shape[0] - u.input_size[0] + 1, img.shape[1] - u.input_size[1] + 1)
     output = np.zeros(img.shape)
 
-    x = nn.TrainData(32)
+    x = u.TrainData(32)
     cntr = 0
     coords = []
     
@@ -140,8 +141,8 @@ def calculate_weights(model, file_name, output_file_name):
 
             coords.append((r, c))
 
-            chunk_x = pool.crop_out(img, (r, c), nn.input_size)
-            chunk_y = np.zeros(nn.output_size)
+            chunk_x = pool.crop_out(img, (r, c), u.input_size)
+            chunk_y = np.zeros(u.output_size)
             x.add(chunk_x, chunk_y)
 
             cntr += 1
@@ -154,7 +155,7 @@ def calculate_weights(model, file_name, output_file_name):
 
                 b = 0
                 for cr in coords:
-                    output[cr[0] + nn.input_size[0] - 1, cr[1] + nn.input_size[1] - 1] = result[b, :, :, 0]
+                    output[cr[0] + u.input_size[0] - 1, cr[1] + u.input_size[1] - 1] = result[b, :, :, 0]
                     b += 1
 
                 coords.clear()
@@ -164,7 +165,7 @@ def calculate_weights(model, file_name, output_file_name):
 
     b = 0
     for cr in coords:
-        output[cr[0] + nn.input_size[0] - 1, cr[1] + nn.input_size[1] - 1] = result[b, :, :, 0]
+        output[cr[0] + u.input_size[0] - 1, cr[1] + u.input_size[1] - 1] = result[b, :, :, 0]
         b += 1
     
     print("Saving result to json.")
@@ -179,10 +180,10 @@ def calculate_weights(model, file_name, output_file_name):
 def test_nn():
 
     model = nn.create_model()
-    batch = nn.TrainData(10)
+    batch = u.TrainData(10)
     for i in range(10):
-        y = np.zeros(nn.output_size, dtype=np.float32)
-        x = pool.generate_random_image(nn.input_size)
+        y = np.zeros(u.output_size, dtype=np.float32)
+        x = pool.generate_random_image(u.input_size)
         y += random.randint(0, 1)
         batch.add(x, y)
 
@@ -223,7 +224,7 @@ def train_nn():
 
     def gen_data(images_, sample_num):
 
-        chunk = nn.TrainData(images_num * sample_num)
+        chunk = u.TrainData(images_num * sample_num)
         for i in range(len(images_)):
             samples = generate_samples(images_[i], sample_num)
             chunk.append(samples)
@@ -237,7 +238,7 @@ def train_nn():
                 line = ""
                 for e in item:
                     line += str(e) + " "
-                line + '\n'
+                line += '\n'
                 f.write(line)
         eval_history.clear()
 

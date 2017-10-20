@@ -10,7 +10,7 @@ There are functions for:
 
 import numpy as np
 from scipy import misc
-import tfnn as nn
+import utils as u
 import os
 
 
@@ -42,13 +42,13 @@ class Image:
     def __find_segmenting_points(self):
         
         self.segm_pts = []
-        for row in range(int(nn.input_size[0]/2), self.s.shape[0] - int(nn.input_size[0]/2) - 1):
-            for col in range(int(nn.input_size[1]/2), self.s.shape[1] - int(nn.input_size[1]/2) - 1):
+        for row in range(int(u.input_size[0]/2), self.s.shape[0] - int(u.input_size[0]/2) - 1):
+            for col in range(int(u.input_size[1]/2), self.s.shape[1] - int(u.input_size[1]/2) - 1):
                 if self.s[row, col] == 255:
                     self.segm_pts.append((row, col))
 
 
-def generate_random_image(size=nn.input_size):
+def generate_random_image(size=u.input_size):
 
     image = np.random.random_integers(0, 256, size=size)
 
@@ -98,7 +98,7 @@ def crop_out(source_image, position, target_size): # crop a small image around t
     else:
         img = None
 
-    return img
+    return img/255.0 # normalize the image
 
 
 # checks whether the 4 pixels next to each other contains
@@ -110,7 +110,7 @@ def check_segmentation(source_image, position):
     s3 = source_image[position[0], position[1] + 1] == 255
     s4 = source_image[position[0] + 1, position[1] + 1] == 255
 
-    y = np.zeros(nn.output_size, dtype=np.float32)
+    y = np.zeros(u.output_size, dtype=np.float32)
 
     if s1 or s2 or s3 or s4:
         return y + 1
