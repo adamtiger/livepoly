@@ -84,8 +84,10 @@ def create_model():
 
     loss = tf.losses.mean_squared_error(labels=tf.cast(correct, tf.float32), predictions=conv4)
     train_step = tf.train.AdamOptimizer(1e-3).minimize(loss)
-
-    sess = tf.Session()
+    
+    gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=0.45)
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_opt))
+    #sess = tf.Session()
     sess.run(tf.global_variables_initializer())
 
     model['sess'] = sess
