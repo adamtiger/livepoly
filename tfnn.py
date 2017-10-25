@@ -7,7 +7,7 @@ the first layer will not be trained.
 
 Functions:
 
-create_model() - builds the convolutional network
+create_model(learning_rate) - builds the convolutional network
 train_batch(model, batch, epochs)
 evaluate(model, test_set)
 save_model(model, file_name) # saves the model into a file which is readable for CNTK in CSharp too
@@ -38,13 +38,13 @@ def one_hot_encoded(one_dim_tensor):
     return encoded
 
 
-def create_model():
+def create_model(lr):
 
     model = {}
 
     input_variable = tf.placeholder(tf.float32, shape=(None, u.input_size[0], u.input_size[1], u.input_size[2]))
 
-    value = 0.01*np.ones(shape=(1, u.input_size[0], u.input_size[1], u.input_size[2]), dtype=np.float32)
+    value = 0.01 * np.ones(shape=(1, u.input_size[0], u.input_size[1], u.input_size[2]), dtype=np.float32)
     value[0, 43, 43, 0] *= 10.0
     value[0, 43, 44, 0] *= 10.0
     value[0, 44, 43, 0] *= 10.0
@@ -79,11 +79,11 @@ def create_model():
     classes = tf.greater(conv4, 0.5) # returns a tensor with the same size as the input
 
     correct = tf.placeholder(tf.int32, shape=(None, u.output_size[0], u.output_size[1], u.output_size[2]))
-    correct_prediction = tf.equal(classes, tf.greater(1, correct))
+    correct_prediction = tf.equal(classes, tf.greater(correct, 0))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     loss = tf.losses.mean_squared_error(labels=tf.cast(correct, tf.float32), predictions=conv4)
-    train_step = tf.train.AdamOptimizer(1e-3).minimize(loss)
+    train_step = tf.train.AdamOptimizer(lr).minimize(loss)
     
     gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=0.45)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_opt))

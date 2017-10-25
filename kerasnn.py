@@ -17,7 +17,7 @@ from keras.optimizers import Adam
 import utils as u
 
 
-def create_model():
+def create_model(lr):
 
     model = Sequential()
 
@@ -28,7 +28,7 @@ def create_model():
     model.add(Conv2D(64, (3, 3), strides=(3, 3), padding='VALID', activation='relu'))
     model.add(Conv2D(1, (9, 9), strides=(1, 1), padding='VALID', activation='tanh'))
 
-    opt = Adam(lr=0.0005)
+    opt = Adam(lr=lr)
     loss = 'binary_crossentropy'
     mtr = ['accuracy']
     model.compile(loss=loss, optimizer=opt, metrics=mtr)

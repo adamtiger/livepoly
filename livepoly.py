@@ -4,6 +4,7 @@ This module is for managing the whole training process for live-polyline.
 '''
 
 import os
+import time
 import random
 import json
 import pool
@@ -16,6 +17,8 @@ parser = argparse.ArgumentParser(description="Live-poyline training algorithm")
 
 parser.add_argument("--iteration", type=int, default=5, metavar='N',
                     help='the number of overall iterations (including sample generation)')
+parser.add_argument("--lr", type=float, default=0.0001, metavar='N',
+                    help="learning rate")
 parser.add_argument("--images-num", type=int, default=1, metavar='N',
                     help="the number of images to use at once for generation")
 parser.add_argument("--training-sample-num", type=int, default=16, metavar='N',
@@ -179,7 +182,7 @@ def calculate_weights(model, file_name, output_file_name):
 # generate random batch
 def test_nn():
 
-    model = nn.create_model()
+    model = nn.create_model(args.lr)
     batch = u.TrainData(10)
     for i in range(10):
         y = np.zeros(u.output_size, dtype=np.float32)
@@ -196,6 +199,7 @@ def train_nn():
 
     # parameters
     iteration = args.iteration
+    lr = args.lr
     images_num = args.images_num
     training_sample_num = args.training_sample_num
     test_sample_num = args.test_sample_num
@@ -204,10 +208,11 @@ def train_nn():
     eval_file_name = args.eval_file_name
 
     eval_history = []
-    model = nn.create_model()
+    model = nn.create_model(lr)
 
     with open(eval_file_name, "w") as f:
         line = "iteration: " + str(iteration)
+        line += " lr: " + str(lr)
         line += " images_num: " + str(images_num)
         line += " training_sample_num: " + str(training_sample_num)
         line += " test_sample_num: " + str(test_sample_num)
@@ -271,7 +276,14 @@ def train_nn():
 #test_nn()
 
 # Run the training and precalculations.
+start_time = time.time()
 train_nn()
+elapsed_time = time.time() - start_time
+
+hh = int(elapsed_time)//3600
+mm = int(elapsed_time - hh * 3600.0) // 60
+ss = int(elapsed_time - hh * 3600.0 - mm * 60.0)
+print("hh:mm:ss -> " + str(hh) + ":" + str(mm) + ":" + str(ss))
 
 # Calculate the weights
 step_in = False
