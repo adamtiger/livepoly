@@ -59,6 +59,10 @@ def read_image(file_name):
     return misc.imread(file_name, mode='L')
 
 
+def write_image(file_name, img):
+    misc.imsave(file_name, img)
+
+
 def convert_grey(source_image, file_name): # (height, width, 3 (RGB))
 
     h = source_image.shape[0]
@@ -94,7 +98,7 @@ def crop_out(source_image, position, target_size): # crop a small image around t
     w = position[1] + target_size[1]
 
     if h <= source_image.shape[0] and w <= source_image.shape[1]:
-        img[:,:,0] = source_image[position[0] : h, position[1] : w] # here the size independence is violated !!! (perf.)
+        img[:,:,0] = source_image[position[0]: h, position[1]: w] # here the size independence is violated !!! (perf.)
     else:
         img = None
 

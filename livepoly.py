@@ -15,6 +15,10 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Live-poyline training algorithm")
 
+parser.add_argument("--mode", type=int, default=0, metavar='N',
+                    help="0: training, 1: test, 2: weight calculation")
+parser.add_argument("--memory", type=float, default=0.5, metavar='N',
+                    help="the fraction of the memory")
 parser.add_argument("--iteration", type=int, default=5, metavar='N',
                     help='the number of overall iterations (including sample generation)')
 parser.add_argument("--lr", type=float, default=0.0001, metavar='N',
@@ -29,8 +33,9 @@ parser.add_argument("--batch-size", type=int, default=8, metavar='N',
                     help="traditional batch size")
 parser.add_argument("--epochs", type=int, default=1, metavar='N',
                     help="traditional epoch")
-parser.add_argument("--eval-file-name", default="eval.csv", metavar='S',
-                    help="the name of the file ")
+parser.add_argument("--model-name", default="model.ckpt", metavar='S',
+                    help="the name of the model which will be loaded")
+
 
 args = parser.parse_args()
 
@@ -39,7 +44,6 @@ args = parser.parse_args()
 
 orig_folder = "orig_imgs"
 new_folder = "imgs"
-model_file_name = "model.ckpt"
 
 # create grey scale image at first if it was not done before
 pool.converter(orig_folder, new_folder)
@@ -127,7 +131,7 @@ def generate_samples(image, number):
     return samples
 
 
-def calculate_weights(model, file_name, output_file_name):
+def calculate_weights(model, file_name, weight_file, weight_img):
 
     img = pool.read_image(file_name)
     output_shape = (img.shape[0] - u.input_size[0] + 1, img.shape[1] - u.input_size[1] + 1)
@@ -158,13 +162,11 @@ def calculate_weights(model, file_name, output_file_name):
 
                 b = 0
                 for cr in coords:
-                    output[cr[0] + u.input_size[0] - 1, cr[1] + u.input_size[1] - 1] = result[b, :, :, 0]
+                    output[cr[0] + u.input_size[0]//2 - 1, cr[1] + u.input_size[1]//2 - 1] = result[b, 0, 0, 0]
                     b += 1
 
                 coords.clear()
                 x.clear()
-
-    result = nn.predict(model, x.get_x(), batch_size=32)
 
     b = 0
     for cr in coords:
@@ -174,15 +176,17 @@ def calculate_weights(model, file_name, output_file_name):
     print("Saving result to json.")
     json_string = json.dumps(output.tolist())
 
-    with open(output_file_name, "w") as f:
+    with open(weight_file, "w") as f:
         f.write(json_string)
+
+    pool.write_image(weight_img, output*255.0)
 
 
 # test running neural network
 # generate random batch
 def test_nn():
 
-    model = nn.create_model(args.lr)
+    model = nn.create_model(args.lr, args.memory)
     batch = u.TrainData(10)
     for i in range(10):
         y = np.zeros(u.output_size, dtype=np.float32)
@@ -198,6 +202,7 @@ def test_nn():
 def train_nn():
 
     # parameters
+    memory = args.memory
     iteration = args.iteration
     lr = args.lr
     images_num = args.images_num
@@ -205,10 +210,13 @@ def train_nn():
     test_sample_num = args.test_sample_num
     batch_size = args.batch_size
     epochs = args.epochs
-    eval_file_name = args.eval_file_name
+
+    post_id = u.uid()
+    model_file_name = "model" + post_id + ".ckpt"
+    eval_file_name = "eval" + post_id + ".csv"
 
     eval_history = []
-    model = nn.create_model(lr)
+    model = nn.create_model(lr, memory)
 
     with open(eval_file_name, "w") as f:
         line = "iteration: " + str(iteration)
@@ -273,29 +281,33 @@ def train_nn():
     save_test_results()
 
 
-#test_nn()
+if args.mode == 0:
 
-# Run the training and precalculations.
-start_time = time.time()
-train_nn()
-elapsed_time = time.time() - start_time
+    # Run the training and pre-calculations.
+    start_time = time.time()
+    train_nn()
+    elapsed_time = time.time() - start_time
 
-hh = int(elapsed_time)//3600
-mm = int(elapsed_time - hh * 3600.0) // 60
-ss = int(elapsed_time - hh * 3600.0 - mm * 60.0)
-print("hh:mm:ss -> " + str(hh) + ":" + str(mm) + ":" + str(ss))
+    hh = int(elapsed_time)//3600
+    mm = int(elapsed_time - hh * 3600.0) // 60
+    ss = int(elapsed_time - hh * 3600.0 - mm * 60.0)
+    print("hh:mm:ss -> " + str(hh) + ":" + str(mm) + ":" + str(ss))
 
-# Calculate the weights
-step_in = False
-if step_in:
+elif args.mode == 1:
 
-    model = nn.create_model()
-    nn.load_model(model, model_file_name)
+    test_nn()
+
+elif args.mode == 2:
+
+    # Calculate the weights
+    model = nn.create_model(0.0, args.memory)
+    nn.load_model(model, args.model_name)
 
     for idx in range(0, len(img_paths), 2):
 
         path = img_paths[idx]
-        new_fn = path.replace(".png", "_w.json")
-        calculate_weights(model, path, new_fn)
+        weight_file = path.replace(".png", "_w.json")
+        weight_img = path.replace(".png", "_w.png")
+        calculate_weights(model, path, weight_file, weight_img)
 
 

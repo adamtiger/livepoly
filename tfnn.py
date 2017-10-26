@@ -38,7 +38,7 @@ def one_hot_encoded(one_dim_tensor):
     return encoded
 
 
-def create_model(lr):
+def create_model(lr, memory):
 
     model = {}
 
@@ -85,9 +85,8 @@ def create_model(lr):
     loss = tf.losses.mean_squared_error(labels=tf.cast(correct, tf.float32), predictions=conv4)
     train_step = tf.train.AdamOptimizer(lr).minimize(loss)
     
-    gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=0.15)
+    gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=memory)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_opt))
-    #sess = tf.Session()
     sess.run(tf.global_variables_initializer())
 
     model['sess'] = sess
@@ -122,7 +121,7 @@ def evaluate(model, test_set, batch_size):
 
 
 def predict(model, x, batch_size):
-    return model['forward'].run(session=model['sess'], feed_dict={model['x']: x})
+    return model['sess'].run(model['forward'], feed_dict={model['x']: x})
 
 
 def save_model(model, file_name):
@@ -130,5 +129,16 @@ def save_model(model, file_name):
     saver.save(model['sess'], file_name)
 
 
+# http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 def load_model(model, file_name):
-    raise NotImplementedError()
+    sess = tf.Session()
+    saver = tf.train.import_meta_graph(file_name + '.meta')
+    saver.restore(sess, tf.train.latest_checkpoint('./'))
+
+    graph = tf.get_default_graph()
+    print(graph.get_operations())
+    fwd_op = graph.get_operation_by_name('Conv2D_4')
+
+    model = {"sess": sess, "forward": fwd_op}
+
+    return model

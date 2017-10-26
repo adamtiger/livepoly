@@ -6,7 +6,7 @@ common tasks.
 '''
 
 import numpy as np
-
+import datetime
 
 input_size = (86, 86, 1)
 output_size = (1, 1, 1)
@@ -46,3 +46,15 @@ class TrainData:
 
     def get_idx(self):
         return self.idx
+
+# generating a unique id for file names
+def uid():
+
+    unique_id = str(datetime.datetime.year)
+    unique_id += str(datetime.datetime.month)
+    unique_id += str(datetime.datetime.day)
+    unique_id += str(datetime.datetime.hour)
+    unique_id += str(datetime.datetime.minute)
+    unique_id += str(datetime.datetime.second)
+
+    return unique_id
