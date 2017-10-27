@@ -63,7 +63,7 @@ def write_image(file_name, img):
     misc.imsave(file_name, img)
 
 
-def convert_grey(source_image, file_name): # (height, width, 3 (RGB))
+def convert_grey(source_image, file_name):  # (height, width, 3 (RGB))
 
     h = source_image.shape[0]
     w = source_image.shape[1]

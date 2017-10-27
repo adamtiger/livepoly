@@ -47,14 +47,10 @@ class TrainData:
     def get_idx(self):
         return self.idx
 
+
 # generating a unique id for file names
 def uid():
 
-    unique_id = str(datetime.datetime.year)
-    unique_id += str(datetime.datetime.month)
-    unique_id += str(datetime.datetime.day)
-    unique_id += str(datetime.datetime.hour)
-    unique_id += str(datetime.datetime.minute)
-    unique_id += str(datetime.datetime.second)
+    unique_id = str(datetime.datetime.today()).replace(' ', '-')
 
     return unique_id

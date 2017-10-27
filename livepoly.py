@@ -158,7 +158,7 @@ def calculate_weights(model, file_name, weight_file, weight_img):
                 print("Iteration at: " + str(cntr) + " / " + str(max_iter))
 
             if cntr % 32 == 0:
-                result = nn.predict(model, x.get_x(), batch_size=32)
+                result = nn.predict(model, x.get_x())
 
                 b = 0
                 for cr in coords:
@@ -168,9 +168,12 @@ def calculate_weights(model, file_name, weight_file, weight_img):
                 coords.clear()
                 x.clear()
 
+    # Use the last saved images.
+    result = nn.predict(model, x.get_x())
+
     b = 0
     for cr in coords:
-        output[cr[0] + u.input_size[0] - 1, cr[1] + u.input_size[1] - 1] = result[b, :, :, 0]
+        output[cr[0] + u.input_size[0] - 1, cr[1] + u.input_size[1] - 1] = result[b, 0, 0, 0]
         b += 1
     
     print("Saving result to json.")
@@ -194,9 +197,20 @@ def test_nn():
         y += random.randint(0, 1)
         batch.add(x, y)
 
-    nn.train_batch(model, batch, 10, 10)
+    nn.train_batch(model, batch, 10)
     print(nn.metrics_names(model))
-    print(nn.evaluate(model, batch, 10))
+    print(nn.evaluate(model, batch))
+
+    result_original = nn.predict(model, batch.get_x())
+
+    nn.save_model(model, "test")
+    model_loaded = nn.load_model("test")
+
+    result_loaded = nn.predict(model_loaded, batch.get_x())
+
+    comp = np.isclose(result_original, result_loaded)
+
+    print(comp)
 
 
 def train_nn():
@@ -212,7 +226,7 @@ def train_nn():
     epochs = args.epochs
 
     post_id = u.uid()
-    model_file_name = "model" + post_id + ".ckpt"
+    model_file_name = "model" + post_id
     eval_file_name = "eval" + post_id + ".csv"
 
     eval_history = []
@@ -265,11 +279,11 @@ def train_nn():
         images = choose_random_images(images_num)
         data_chunk = gen_data(images, training_sample_num)
 
-        result = nn.train_batch(model, data_chunk, batch_size, epochs)
+        result = nn.train_batch(model, data_chunk, epochs)
 
         if i % 100 == 0:
             test_set = gen_data(images, test_sample_num)
-            result = result + nn.evaluate(model, test_set, batch_size)
+            result = result + nn.evaluate(model, test_set)
             result.append(i)
             eval_history.append(result)
 
@@ -300,8 +314,7 @@ elif args.mode == 1:
 elif args.mode == 2:
 
     # Calculate the weights
-    model = nn.create_model(0.0, args.memory)
-    nn.load_model(model, args.model_name)
+    model = nn.load_model(args.model_name)
 
     for idx in range(0, len(img_paths), 2):
 

@@ -42,7 +42,7 @@ def create_model(lr, memory):
 
     model = {}
 
-    input_variable = tf.placeholder(tf.float32, shape=(None, u.input_size[0], u.input_size[1], u.input_size[2]))
+    input_variable = tf.placeholder(tf.float32, shape=(None, u.input_size[0], u.input_size[1], u.input_size[2]), name='input')
 
     value = 0.01 * np.ones(shape=(1, u.input_size[0], u.input_size[1], u.input_size[2]), dtype=np.float32)
     value[0, 43, 43, 0] *= 10.0
@@ -75,8 +75,8 @@ def create_model(lr, memory):
     conv1 = tf.nn.relu(tf.nn.conv2d(locally, w(9, 9, 1, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
     conv2 = tf.nn.relu(tf.nn.conv2d(conv1, w(9, 9, 32, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
     conv3 = tf.nn.relu(tf.nn.conv2d(conv2, w(3, 3, 32, 64), padding='VALID', strides=[1, 3, 3, 1]) + b(64))
-    conv4 = tf.nn.sigmoid(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='VALID', strides=[1, 1, 1, 1]) + b(1))
-    classes = tf.greater(conv4, 0.5) # returns a tensor with the same size as the input
+    conv4 = tf.nn.sigmoid(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='VALID', strides=[1, 1, 1, 1]) + b(1), name='fwd')
+    classes = tf.greater(conv4, 0.5, name='classes')  # returns a tensor with the same size as the input
 
     correct = tf.placeholder(tf.int32, shape=(None, u.output_size[0], u.output_size[1], u.output_size[2]))
     correct_prediction = tf.equal(classes, tf.greater(correct, 0))
@@ -104,7 +104,7 @@ def metrics_names(model):
     return ["train_loss", "train_acc", "test_loss", "test_acc"]
 
 
-def train_batch(model, data_chunk, batch_size, epochs):
+def train_batch(model, data_chunk, epochs):
     sum_loss = 0.0
     sum_acc = 0.0
     for epoch in range(epochs):
@@ -114,13 +114,14 @@ def train_batch(model, data_chunk, batch_size, epochs):
     return [sum_loss/epochs, sum_acc/epochs]
 
 
-def evaluate(model, test_set, batch_size):
+def evaluate(model, test_set):
 
     evals = model['sess'].run([model['loss'], model['acc']], feed_dict={model['x']: test_set.get_x(), model['y']: test_set.get_y()})
     return [evals[0], evals[1]]
 
 
-def predict(model, x, batch_size):
+# Returns a numpy array as a result.
+def predict(model, x):
     return model['sess'].run(model['forward'], feed_dict={model['x']: x})
 
 
@@ -130,15 +131,16 @@ def save_model(model, file_name):
 
 
 # http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-def load_model(model, file_name):
+def load_model(file_name):
     sess = tf.Session()
     saver = tf.train.import_meta_graph(file_name + '.meta')
-    saver.restore(sess, tf.train.latest_checkpoint('./'))
+    saver.restore(sess, tf.train.latest_checkpoint('./')) # Find the remaining necessary files.
 
+    # Restoring the input and output tensors.
     graph = tf.get_default_graph()
-    print(graph.get_operations())
-    fwd_op = graph.get_operation_by_name('Conv2D_4')
+    fwd_op = graph.get_tensor_by_name('fwd:0')
+    x = graph.get_tensor_by_name('input:0')
 
-    model = {"sess": sess, "forward": fwd_op}
+    model = {"sess": sess, "forward": fwd_op, "x": x}
 
     return model

@@ -13,6 +13,9 @@
 .nf*
 *.h5
 *.csv
+*.meta
+*.index
+*.data-00000-of-00001
 *.ckpt.*
 checkpoint
 
