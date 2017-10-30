@@ -314,7 +314,7 @@ elif args.mode == 1:
 elif args.mode == 2:
 
     # Calculate the weights
-    model = nn.load_model(args.model_name)
+    model = nn.load_model(args.model_name, args.memory)
 
     for idx in range(0, len(img_paths), 2):
 
