@@ -75,14 +75,15 @@ def create_model(lr, memory):
     conv1 = tf.nn.relu(tf.nn.conv2d(locally, w(9, 9, 1, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
     conv2 = tf.nn.relu(tf.nn.conv2d(conv1, w(9, 9, 32, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
     conv3 = tf.nn.relu(tf.nn.conv2d(conv2, w(3, 3, 32, 64), padding='VALID', strides=[1, 3, 3, 1]) + b(64))
-    conv4 = tf.nn.sigmoid(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='VALID', strides=[1, 1, 1, 1]) + b(1), name='fwd')
-    classes = tf.greater(conv4, 0.5, name='classes')  # returns a tensor with the same size as the input
+    conv4 = tf.nn.tanh(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='VALID', strides=[1, 1, 1, 1]) + b(1))
+    fwd = tf.multiply(tf.add(conv4, 1.0), 0.5, name='fwd')
+    classes = tf.greater(fwd, 0.5, name='classes')  # returns a tensor with the same size as the input
 
     correct = tf.placeholder(tf.int32, shape=(None, u.output_size[0], u.output_size[1], u.output_size[2]))
     correct_prediction = tf.equal(classes, tf.greater(correct, 0))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-    loss = tf.losses.mean_squared_error(labels=tf.cast(correct, tf.float32), predictions=conv4)
+    loss = tf.losses.mean_squared_error(labels=tf.cast(correct, tf.float32), predictions=fwd)
     train_step = tf.train.AdamOptimizer(lr).minimize(loss)
     
     gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=memory)
@@ -90,7 +91,7 @@ def create_model(lr, memory):
     sess.run(tf.global_variables_initializer())
 
     model['sess'] = sess
-    model['forward'] = conv4
+    model['forward'] = fwd
     model['train'] = train_step
     model['loss'] = loss
     model['acc'] = accuracy
