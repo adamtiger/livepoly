@@ -1,6 +1,7 @@
 # Other files to ignore
 
 .idea/
+ignored_folder/
 *.jpg
 *.jpeg
 *.tiff

@@ -204,7 +204,7 @@ def test_nn():
     result_original = nn.predict(model, batch.get_x())
 
     nn.save_model(model, "test")
-    model_loaded = nn.load_model("test")
+    model_loaded = nn.load_model("test", 0.8)
 
     result_loaded = nn.predict(model_loaded, batch.get_x())
 
