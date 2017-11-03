@@ -42,25 +42,31 @@ args = parser.parse_args()
 # discover the folder structure and find images
 # file name with ending '_orig' is the original version
 
-test_folder = "test_imgs"
+test_orig_folder = "test_orig_imgs"
 orig_folder = "orig_imgs"
-new_folder = "imgs/"
+imgs_folder = "imgs/"
+test_imgs_folder = "test_imgs/"
 evaluations_folder = "evals/"
 models_folder = "models/"
 
 # create grey scale image at first if it was not done before
-pool.converter(orig_folder, new_folder)
+pool.converter(orig_folder, imgs_folder)
+pool.converter(test_orig_folder, test_imgs_folder)
 
-img_names = os.listdir(new_folder)
-img_paths = [new_folder + t for t in img_names]
+img_names = os.listdir(imgs_folder)
+img_paths = [imgs_folder + t for t in img_names]
+
+test_img_names = os.listdir(test_imgs_folder)
+test_img_paths = [test_imgs_folder + t for t in test_img_names]
 
 print(img_paths)
+print(test_img_paths)
 
 
-def choose_random_images(number):
+def choose_random_images(number, paths):
 
     images = []
-    num_images = len(img_paths)
+    num_images = len(paths)
     r_list = [x for x in range(num_images)]
 
     if number > num_images:
@@ -78,8 +84,8 @@ def choose_random_images(number):
         else:
             o_idx = img_idx - 1
 
-        img_orig = pool.read_image(img_paths[o_idx])
-        img_segm = pool.read_image(img_paths[o_idx+1])
+        img_orig = pool.read_image(paths[o_idx])
+        img_segm = pool.read_image(paths[o_idx+1])
 
         images.append(pool.Image(img_orig, img_segm))
 
@@ -134,7 +140,7 @@ def generate_samples(image, number):
     return samples
 
 
-def calculate_weights(model, file_name, weight_file, weight_img):
+def calculate_then_save_weights(model, file_name, weight_file, weight_img):
 
     img = pool.read_image(file_name)
     output_shape = (img.shape[0] - u.input_size[0] + 1, img.shape[1] - u.input_size[1] + 1)
@@ -218,7 +224,7 @@ def test_nn():
 
 def train_nn():
 
-    # parameters
+    # initialize paramters parameters
     memory = args.memory
     iteration = args.iteration
     lr = args.lr
@@ -235,23 +241,7 @@ def train_nn():
     eval_history = []
     model = nn.create_model(lr, memory)
 
-    with open(eval_file_name, "w") as f:
-        line = "iteration: " + str(iteration)
-        line += " lr: " + str(lr)
-        line += " images_num: " + str(images_num)
-        line += " training_sample_num: " + str(training_sample_num)
-        line += " test_sample_num: " + str(test_sample_num)
-        line += " batch_size: " + str(batch_size)
-        line += " epochs: " + str(epochs)
-        line += " eval_file_name: " + eval_file_name
-        f.write(line + '\n')
-
-        line = ""
-        for item in nn.metrics_names(model):
-            line += item + " "
-        line += "iteration "
-        f.write(line + "\n")
-
+    # define functions for local usage
     def gen_data(images_, sample_num):
 
         chunk = u.TrainData(images_num * sample_num)
@@ -272,25 +262,43 @@ def train_nn():
                 f.write(line)
         eval_history.clear()
 
+    with open(eval_file_name, "w") as f:
+        line = "iteration: " + str(iteration)
+        line += " lr: " + str(lr)
+        line += " images_num: " + str(images_num)
+        line += " training_sample_num: " + str(training_sample_num)
+        line += " test_sample_num: " + str(test_sample_num)
+        line += " batch_size: " + str(batch_size)
+        line += " epochs: " + str(epochs)
+        line += " eval_file_name: " + eval_file_name
+        f.write(line + '\n')
+
+        line = ""
+        for item in nn.metrics_names(model):
+            line += item + " "
+        line += "iteration "
+        f.write(line + "\n")
+
     print("Training started.")
 
     for i in range(iteration):
 
-        if i % 500 == 0:
+        if i % 1 == 0:
             print("Currently at: " + str(i))
 
-        images = choose_random_images(images_num)
+        images = choose_random_images(images_num, img_paths)
         data_chunk = gen_data(images, training_sample_num)
 
         result = nn.train_batch(model, data_chunk, epochs)
 
-        if i % 100 == 0:
-            test_set = gen_data(images, test_sample_num)
+        if i % 1 == 0:
+            test_images = choose_random_images(1, test_img_paths)
+            test_set = gen_data(test_images, test_sample_num)
             result = result + nn.evaluate(model, test_set)
             result.append(i)
             eval_history.append(result)
 
-        if i % 1000:
+        if i % 2:
             save_test_results()
 
     nn.save_model(model, model_file_name)
@@ -319,11 +327,11 @@ elif args.mode == 2:
     # Calculate the weights
     model = nn.load_model(args.model_name, args.memory)
 
-    for idx in range(0, len(img_paths), 2):
+    for idx in range(0, len(test_img_paths), 2):
 
-        path = img_paths[idx]
+        path = test_img_paths[idx]
         weight_file = path.replace(".png", "_w.json")
         weight_img = path.replace(".png", "_w.png")
-        calculate_weights(model, path, weight_file, weight_img)
+        calculate_then_save_weights(model, path, weight_file, weight_img)
 
 
