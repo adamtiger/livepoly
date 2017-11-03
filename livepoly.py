@@ -33,7 +33,7 @@ parser.add_argument("--batch-size", type=int, default=8, metavar='N',
                     help="traditional batch size")
 parser.add_argument("--epochs", type=int, default=1, metavar='N',
                     help="traditional epoch")
-parser.add_argument("--model-name", default="model.ckpt", metavar='S',
+parser.add_argument("--model-name", default="model", metavar='S',
                     help="the name of the model which will be loaded")
 
 
@@ -42,14 +42,17 @@ args = parser.parse_args()
 # discover the folder structure and find images
 # file name with ending '_orig' is the original version
 
+test_folder = "test_imgs"
 orig_folder = "orig_imgs"
-new_folder = "imgs"
+new_folder = "imgs/"
+evaluations_folder = "evals/"
+models_folder = "models/"
 
 # create grey scale image at first if it was not done before
 pool.converter(orig_folder, new_folder)
 
 img_names = os.listdir(new_folder)
-img_paths = [new_folder + "/" + t for t in img_names]
+img_paths = [new_folder + t for t in img_names]
 
 print(img_paths)
 
@@ -226,8 +229,8 @@ def train_nn():
     epochs = args.epochs
 
     post_id = u.uid()
-    model_file_name = "model" + post_id
-    eval_file_name = "eval" + post_id + ".csv"
+    model_file_name = models_folder + "model" + post_id + "/model"
+    eval_file_name = evaluations_folder + "eval" + post_id + ".csv"
 
     eval_history = []
     model = nn.create_model(lr, memory)

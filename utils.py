@@ -52,5 +52,6 @@ class TrainData:
 def uid():
 
     unique_id = str(datetime.datetime.today()).replace(' ', '-')
+    unique_id = unique_id.replace(':', '')
 
     return unique_id

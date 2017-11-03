@@ -131,11 +131,11 @@ def save_model(model, file_name):
 
 
 # http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-def load_model(file_name, gpu_memory):
+def load_model(folder_name, gpu_memory):
     gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_opt))
-    saver = tf.train.import_meta_graph(file_name + '.meta')
-    saver.restore(sess, tf.train.latest_checkpoint('./')) # Find the remaining necessary files.
+    saver = tf.train.import_meta_graph(folder_name + '/model.meta')
+    saver.restore(sess, tf.train.latest_checkpoint(folder_name)) # Find the remaining necessary files.
 
     # Restoring the input and output tensors.
     graph = tf.get_default_graph()
@@ -143,5 +143,7 @@ def load_model(file_name, gpu_memory):
     x = graph.get_tensor_by_name('input:0')
 
     model = {"sess": sess, "forward": fwd_op, "x": x}
+
+    print("Model was successfully loaded.")
 
     return model
