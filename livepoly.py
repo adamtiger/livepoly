@@ -283,7 +283,7 @@ def train_nn():
 
     for i in range(iteration):
 
-        if i % 1 == 0:
+        if i % 500 == 0:
             print("Currently at: " + str(i))
 
         images = choose_random_images(images_num, img_paths)
@@ -291,14 +291,14 @@ def train_nn():
 
         result = nn.train_batch(model, data_chunk, epochs)
 
-        if i % 1 == 0:
+        if i % 500 == 0:
             test_images = choose_random_images(1, test_img_paths)
             test_set = gen_data(test_images, test_sample_num)
             result = result + nn.evaluate(model, test_set)
             result.append(i)
             eval_history.append(result)
 
-        if i % 2:
+        if i % 2000:
             save_test_results()
 
     nn.save_model(model, model_file_name)

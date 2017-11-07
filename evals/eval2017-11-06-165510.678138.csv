@@ -1,0 +1,4 @@
+iteration: 2 lr: 0.0001 images_num: 1 training_sample_num: 16 test_sample_num: 8 batch_size: 8 epochs: 1 eval_file_name: evals/eval2017-11-06-165510.678138.csv
+train_loss train_acc test_loss test_acc iteration 
+0.744007945061 0.25 0.603089 0.375 0 
+0.53222578764 0.4375 0.43981 0.5 1 
