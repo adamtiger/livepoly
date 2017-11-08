@@ -40,18 +40,25 @@ parser.add_argument("--model-name", default="model", metavar='S',
 args = parser.parse_args()
 
 # discover the folder structure and find images
-# file name with ending '_orig' is the original version
 
+# the necessary images:
+#   original: the images which will be the input normally
+#   test: images what is not used for training but for testing generalization
+#   twin: like a domain knowledge, examples for twin crystal lines.
+twin_orig_folder = "twin_orig_imgs"
 test_orig_folder = "test_orig_imgs"
 orig_folder = "orig_imgs"
-imgs_folder = "imgs/"
+twin_imgs_folder = "twin_imgs/"
 test_imgs_folder = "test_imgs/"
+imgs_folder = "imgs/"
+
 evaluations_folder = "evals/"
 models_folder = "models/"
 
 # create grey scale image at first if it was not done before
 pool.converter(orig_folder, imgs_folder)
 pool.converter(test_orig_folder, test_imgs_folder)
+pool.converter(twin_orig_folder, twin_imgs_folder)
 
 img_names = os.listdir(imgs_folder)
 img_paths = [imgs_folder + t for t in img_names]
@@ -59,8 +66,12 @@ img_paths = [imgs_folder + t for t in img_names]
 test_img_names = os.listdir(test_imgs_folder)
 test_img_paths = [test_imgs_folder + t for t in test_img_names]
 
+twin_img_names = os.listdir(twin_imgs_folder)
+twin_img_paths = [twin_imgs_folder + t for t in twin_img_names]
+
 print(img_paths)
 print(test_img_paths)
+print(twin_img_paths)
 
 
 def choose_random_images(number, paths):
@@ -101,7 +112,7 @@ def choose_random_images(number, paths):
   be the bad sample.
 '''
 
-def generate_samples(image, number):
+def generate_samples(image, number, twin):
 
     h = u.input_size[0]
     w = u.input_size[1]
@@ -134,6 +145,9 @@ def generate_samples(image, number):
             x, y = random_point_on_image()
         else:
             x, y = random_point_on_segmenting()
+
+        if twin:
+            y *= 0.0
 
         samples.add(x, y)
 
@@ -242,11 +256,11 @@ def train_nn():
     model = nn.create_model(lr, memory)
 
     # define functions for local usage
-    def gen_data(images_, sample_num):
+    def gen_data(images_, sample_num, twin):
 
         chunk = u.TrainData(images_num * sample_num)
         for i in range(len(images_)):
-            samples = generate_samples(images_[i], sample_num)
+            samples = generate_samples(images_[i], sample_num, twin)
             chunk.append(samples)
 
         return chunk
@@ -286,19 +300,28 @@ def train_nn():
         if i % 500 == 0:
             print("Currently at: " + str(i))
 
+        # twin samples
+        if i % 100 == 0:
+            images = choose_random_images(images_num, twin_img_paths)
+            data_chunk = gen_data(images, training_sample_num, True)
+
+            nn.train_batch(model, data_chunk, epochs)
+
+        # normal samples
         images = choose_random_images(images_num, img_paths)
-        data_chunk = gen_data(images, training_sample_num)
+        data_chunk = gen_data(images, training_sample_num, False)
 
         result = nn.train_batch(model, data_chunk, epochs)
 
+        # test
         if i % 500 == 0:
             test_images = choose_random_images(1, test_img_paths)
-            test_set = gen_data(test_images, test_sample_num)
+            test_set = gen_data(test_images, test_sample_num, False)
             result = result + nn.evaluate(model, test_set)
             result.append(i)
             eval_history.append(result)
 
-        if i % 2000:
+        if i % 2000 == 0:
             save_test_results()
 
     nn.save_model(model, model_file_name)
