@@ -2,13 +2,18 @@
 This module is for creating the network model.
 Training and evaluation is provided.
 The implementation is in TensorFlow.
-It differs from the Keras one because
-the first layer will not be trained.
+
+The network model provides two type of trainig.
+1) pre-training
+2) transfer learning.
+In the second case an additional
+dense layer is applied.
 
 Functions:
 
-create_model(learning_rate) - builds the convolutional network
+create_model(learning_rate, memory_rate) - builds the convolutional network
 train_batch(model, batch, epochs)
+transfer_training(model, batch, epochs)
 evaluate(model, test_set)
 save_model(model, file_name) # saves the model into a file which is readable for CNTK in CSharp too
 load_model(file_name)
@@ -75,17 +80,25 @@ def create_model(lr, memory):
     conv1 = tf.nn.relu(tf.nn.conv2d(locally, w(9, 9, 1, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
     conv2 = tf.nn.relu(tf.nn.conv2d(conv1, w(9, 9, 32, 32), padding='VALID', strides=[1, 1, 1, 1]) + b(32))
     conv3 = tf.nn.relu(tf.nn.conv2d(conv2, w(3, 3, 32, 64), padding='VALID', strides=[1, 3, 3, 1]) + b(64))
-    conv4 = tf.nn.tanh(tf.nn.conv2d(conv3, w(9, 9, 64, 1), padding='VALID', strides=[1, 1, 1, 1]) + b(1))
+    conv4_W = w(9, 9, 64, 1) # save these for transfer learning
+    conv4_b = b(1)
+    conv4 = tf.nn.tanh(tf.nn.conv2d(conv3, conv4_W, padding='VALID', strides=[1, 1, 1, 1]) + conv4_b)
     fwd = tf.multiply(tf.add(conv4, 1.0), 0.5, name='fwd')
     classes = tf.greater(fwd, 0.5, name='classes')  # returns a tensor with the same size as the input
 
+    # Calculate accuracy in case of pre-training.
     correct = tf.placeholder(tf.int32, shape=(None, u.output_size[0], u.output_size[1], u.output_size[2]))
     correct_prediction = tf.equal(classes, tf.greater(correct, 0))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
+    # Calculate loss for the forward direction in case of pre-training
     loss = tf.losses.mean_squared_error(labels=tf.cast(correct, tf.float32), predictions=fwd)
     train_step = tf.train.AdamOptimizer(lr).minimize(loss)
-    
+
+    # During transfer learning only the last layer is fine-tuned.
+    tfr_step = tf.train.AdamOptimizer(lr).minimize(loss, var_list=[conv4_W, conv4_b], name='tfr')
+
+    # Initializing the session.
     gpu_opt = tf.GPUOptions(per_process_gpu_memory_fraction=memory)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_opt))
     sess.run(tf.global_variables_initializer())
@@ -93,6 +106,7 @@ def create_model(lr, memory):
     model['sess'] = sess
     model['forward'] = fwd
     model['train'] = train_step
+    model['tfr'] = tfr_step
     model['loss'] = loss
     model['acc'] = accuracy
     model['x'] = input_variable
@@ -110,6 +124,16 @@ def train_batch(model, data_chunk, epochs):
     sum_acc = 0.0
     for epoch in range(epochs):
         result = model['sess'].run([model['train'], model['loss'], model['acc']], feed_dict={model['x']: data_chunk.get_x(), model['y']: data_chunk.get_y()})
+        sum_loss += result[1]
+        sum_acc += result[2]
+    return [sum_loss/epochs, sum_acc/epochs]
+
+
+def transfer_training(model, data_chunk, epochs):
+    sum_loss = 0.0
+    sum_acc = 0.0
+    for epoch in range(epochs):
+        result = model['sess'].run([model['tfr'], model['loss'], model['acc']], feed_dict={model['x']: data_chunk.get_x(), model['y']: data_chunk.get_y()})
         sum_loss += result[1]
         sum_acc += result[2]
     return [sum_loss/epochs, sum_acc/epochs]
@@ -141,9 +165,10 @@ def load_model(folder_name, gpu_memory):
     # Restoring the input and output tensors.
     graph = tf.get_default_graph()
     fwd_op = graph.get_tensor_by_name('fwd:0')
+    tfr_op = graph.get_tensor_by_name('tfr:0')
     x = graph.get_tensor_by_name('input:0')
 
-    model = {"sess": sess, "forward": fwd_op, "x": x}
+    model = {"sess": sess, "forward": fwd_op, "tfr": tfr_op, "x": x}
 
     print("Model was successfully loaded.")
 

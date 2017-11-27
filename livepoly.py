@@ -35,6 +35,8 @@ parser.add_argument("--epochs", type=int, default=1, metavar='N',
                     help="traditional epoch")
 parser.add_argument("--model-name", default="model", metavar='S',
                     help="the name of the model which will be loaded")
+parser.add_argument("--tfr-img-id", default=0, metavar='N',
+                    help="the image on which transfer learning is apllied")
 
 
 args = parser.parse_args()
@@ -297,11 +299,11 @@ def train_nn():
 
     for i in range(iteration):
 
-        if i % 500 == 0:
+        if i % 1 == 0:  # 500
             print("Currently at: " + str(i))
 
         # twin samples
-        if i % 100 == 0:
+        if i % 1 == 0:  # 100
             images = choose_random_images(images_num, twin_img_paths)
             data_chunk = gen_data(images, training_sample_num, True)
 
@@ -314,14 +316,14 @@ def train_nn():
         result = nn.train_batch(model, data_chunk, epochs)
 
         # test
-        if i % 500 == 0:
+        if i % 1 == 0:  # 500
             test_images = choose_random_images(1, test_img_paths)
             test_set = gen_data(test_images, test_sample_num, False)
             result = result + nn.evaluate(model, test_set)
             result.append(i)
             eval_history.append(result)
 
-        if i % 2000 == 0:
+        if i % 1 == 0:  # 2000
             save_test_results()
 
     nn.save_model(model, model_file_name)
@@ -357,4 +359,96 @@ elif args.mode == 2:
         weight_img = path.replace(".png", "_w.png")
         calculate_then_save_weights(model, path, weight_file, weight_img)
 
+elif args.mode == 3:
 
+    # initialize paramters parameters
+    model_name = args.model_name
+    memory = args.memory
+    iteration = args.iteration
+    lr = args.lr
+    images_num = 1
+    training_sample_num = args.training_sample_num
+    test_sample_num = args.test_sample_num
+    batch_size = args.batch_size
+    epochs = args.epochs
+
+    post_id = u.uid()
+    model_file_name = models_folder + "tfr_model" + post_id + "/model"
+    eval_file_name = evaluations_folder + "tfr_eval" + post_id + ".csv"
+
+    eval_history = []
+    model = nn.load_model(model_name, memory)
+    images = [pool.Image(pool.read_image(test_img_paths[args.tfr_img_id]), pool.read_image(test_img_paths(args.tfr_id+1)))]
+
+    # define functions for local usage
+    def gen_data(images_, sample_num, twin):
+
+        chunk = u.TrainData(images_num * sample_num)
+        for i in range(len(images_)):
+            samples = generate_samples(images_[i], sample_num, twin)
+            chunk.append(samples)
+
+        return chunk
+
+
+    def save_test_results():
+
+        with open(eval_file_name, "a") as f:
+            for item in eval_history:
+                line = ""
+                for e in item:
+                    line += str(e) + " "
+                line += '\n'
+                f.write(line)
+        eval_history.clear()
+
+
+    with open(eval_file_name, "w") as f:
+        line = "------ Transfer learning results ------" + '\n'
+        line += "iteration: " + str(iteration)
+        line += " lr: " + str(lr)
+        line += " images_num: " + str(images_num)
+        line += " training_sample_num: " + str(training_sample_num)
+        line += " test_sample_num: " + str(test_sample_num)
+        line += " batch_size: " + str(batch_size)
+        line += " epochs: " + str(epochs)
+        line += " eval_file_name: " + eval_file_name
+        f.write(line + '\n')
+
+        line = ""
+        for item in nn.metrics_names(model):
+            line += item + " "
+        line += "iteration "
+        f.write(line + "\n")
+
+    print("Training started.")
+
+    for i in range(iteration):
+
+        if i % 1 == 0:  # 500
+            print("Currently at: " + str(i))
+
+        # twin samples
+        if i % 1 == 0:  # 100
+            data_chunk = gen_data(images, training_sample_num, True)
+
+            nn.train_batch(model, data_chunk, epochs)
+
+        # normal samples
+        data_chunk = gen_data(images, training_sample_num, False)
+
+        result = nn.train_batch(model, data_chunk, epochs)
+
+        # test
+        if i % 1 == 0:  # 500
+            test_set = gen_data(images, test_sample_num, False)
+            result = result + nn.evaluate(model, test_set)
+            result.append(i)
+            eval_history.append(result)
+
+        if i % 1 == 0:  # 2000
+            save_test_results()
+
+    nn.save_model(model, model_file_name)
+
+    save_test_results()
