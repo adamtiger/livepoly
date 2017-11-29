@@ -15,23 +15,22 @@ import os
 
 
 class Image:
-
-    def __init__(self, orig, segm):
+    def __init__(self, orig, segm, twin):
         self.o = orig
+        self.t = twin
         self.s = segm
+        self.__check_sizes()
         self.__find_segmenting_points()
+        self.__find_twin_points()
 
     def orig(self):
         return self.o
 
-    def set_orig(self, new_orig):
-        self.o = new_orig
+    def twin(self):
+        return self.t
 
     def segm(self):
         return self.s
-
-    def set_segm(self, new_segm):
-        self.s = new_segm
 
     def shape(self):
         return self.o.shape
@@ -40,26 +39,65 @@ class Image:
         return self.segm_pts
 
     def __find_segmenting_points(self):
-        
+
         self.segm_pts = []
-        for row in range(int(u.input_size[0]/2), self.s.shape[0] - int(u.input_size[0]/2) - 1):
-            for col in range(int(u.input_size[1]/2), self.s.shape[1] - int(u.input_size[1]/2) - 1):
+        for row in range(int(u.input_size[0] / 2), self.s.shape[0] - int(u.input_size[0] / 2) - 1):
+            for col in range(int(u.input_size[1] / 2), self.s.shape[1] - int(u.input_size[1] / 2) - 1):
                 if self.s[row, col] == 255:
                     self.segm_pts.append((row, col))
 
+    def __find_twin_points(self):
+
+        self.twin_pts = []
+        for row in range(int(u.input_size[0] / 2), self.t.shape[0] - int(u.input_size[0] / 2) - 1):
+            for col in range(int(u.input_size[1] / 2), self.t.shape[1] - int(u.input_size[1] / 2) - 1):
+                if self.t[row, col] == 255:
+                    self.twin_pts.append((row, col))
+
+    def __check_sizes(self):
+        if self.o.shape == self.t.shape and self.o.shape == self.s.shape:
+            raise AssertionError("Wrong sizes")
+
+
+def image_from_file(orig_file, segm_file, twin_file):
+    orig = read_picture(orig_file)
+    segm = read_picture(segm_file)
+    twin = read_picture(twin_file)
+
+    return Image(orig, segm, twin)
+
+
+def sample(src, position, target_size):
+
+    h = u.input_size[0]
+    w = u.input_size[1]
+
+    x = crop_out(src.orig(), position, u.input_size)
+
+    y_s = np.zeros(u.output_size, dtype=np.float32)
+    y_t = np.ones(u.output_size, dtype=np.float32)
+    if check_bright(src.segm(), (position[0] + int(h / 2) - 1, position[1] + int(w / 2) - 1)):
+        y_s += 1
+    else:
+        y_t *= 0
+
+    return x, y_s, y_t
+
+
+# ------------------
+# Helper functions
 
 def generate_random_image(size=u.input_size):
-
     image = np.random.random_integers(0, 256, size=size)
 
     return image
 
 
-def read_image(file_name):
+def read_picture(file_name):
     return misc.imread(file_name, mode='L')
 
 
-def write_image(file_name, img):
+def write_picture(file_name, img):
     misc.imsave(file_name, img)
 
 
@@ -70,13 +108,13 @@ def convert_grey(source_image, file_name):  # (height, width, 3 (RGB))
     img = np.ndarray((h, w))
     for i in range(h):
         for j in range(w):
-            img[i, j] = source_image[i, j, 0] * 299/1000 + source_image[i, j, 1] * 587/1000 + source_image[i, j, 2] * 114/1000
+            img[i, j] = source_image[i, j, 0] * 299 / 1000 + source_image[i, j, 1] * 587 / 1000 + source_image[
+                                                                                                      i, j, 2] * 114 / 1000
 
     misc.imsave(file_name, img)
 
 
 def converter(folder, new_folder):
-
     if not os.path.exists(new_folder):
         os.makedirs(new_folder)
 
@@ -90,7 +128,7 @@ def converter(folder, new_folder):
             convert_grey(img, new_path)
 
 
-def crop_out(source_image, position, target_size): # crop a small image around the position
+def crop_out(source_image, position, target_size):  # crop a small image around the position
 
     #  the position will be the left top corner of the rectangle
     img = np.zeros(target_size)
@@ -98,17 +136,17 @@ def crop_out(source_image, position, target_size): # crop a small image around t
     w = position[1] + target_size[1]
 
     if h <= source_image.shape[0] and w <= source_image.shape[1]:
-        img[:,:,0] = source_image[position[0]: h, position[1]: w] # here the size independence is violated !!! (perf.)
+        img[:, :, 0] = source_image[position[0]: h,
+                       position[1]: w]  # here the size independence is violated !!! (perf.)
     else:
         img = None
 
-    return img/255.0 # normalize the image
+    return img / 255.0  # normalize the image
 
 
 # checks whether the 4 pixels next to each other contains
-# any segmenting pixel, the 'position' is the left top pixel
-def check_segmentation(source_image, position):
-
+# any bright pixel, the 'position' is the left top pixel
+def check_bright(source_image, position):
     s1 = source_image[position[0], position[1]] == 255
     s2 = source_image[position[0] + 1, position[1]] == 255
     s3 = source_image[position[0], position[1] + 1] == 255
@@ -124,4 +162,3 @@ def check_segmentation(source_image, position):
 
 def pop_img(img):
     misc.imshow(img)
-

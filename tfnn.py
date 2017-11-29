@@ -86,7 +86,7 @@ def create_model(lr, memory):
     fwd = tf.multiply(tf.add(conv4, 1.0), 0.5, name='fwd')
     classes = tf.greater(fwd, 0.5, name='classes')  # returns a tensor with the same size as the input
 
-    # Calculate accuracy in case of pre-training.
+    # Calculate accuracy.
     correct = tf.placeholder(tf.int32, shape=(None, u.output_size[0], u.output_size[1], u.output_size[2]))
     correct_prediction = tf.equal(classes, tf.greater(correct, 0))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
