@@ -81,11 +81,12 @@ def sample(src, position):
     x = crop_out(src.orig(), position, u.input_size)
 
     y_s = np.zeros(u.output_size, dtype=np.float32)
-    y_t = np.ones(u.output_size, dtype=np.float32)
+    y_t = np.zeros(u.output_size, dtype=np.float32)
     if check_bright(src.segm(), (position[0] + int(h / 2) - 1, position[1] + int(w / 2) - 1)):
         y_s += 1
     else:
-        y_t *= 0
+        if check_bright(src.twin(), (position[0] + int(h / 2) - 1, position[1] + int(w/2) - 1)):
+            y_t += 1
 
     return x, y_s, y_t
 

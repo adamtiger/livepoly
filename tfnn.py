@@ -94,13 +94,13 @@ def create_model(lr, memory):
 
     # Calculate the confusion matrix. Each expression is the logical relations for the elements in the conf matrix.
     twin = tf.placeholder(tf.int32, shape=(None, u.output_size[0], u.output_size[1], u.output_size[2]), name="twin")
-    num_samples = tf.reduce_sum(tf.cast(correct_prediction, tf.float32))
-    ss = tf.div(tf.reduce_sum(tf.cast(tf.equal(classes, tf.equal(correct, 1)), tf.float32)), num_samples)
-    st = tf.div(tf.reduce_sum(tf.cast(tf.equal(classes, tf.equal(twin, 1)), tf.float32)), num_samples)
-    sn = tf.div(tf.reduce_sum(tf.cast(tf.equal(classes, tf.equal(tf.equal(twin, 0), tf.equal(correct, 0))), tf.float32)), num_samples)
-    ns = tf.div(tf.reduce_sum(tf.cast(tf.not_equal(classes, tf.equal(correct, 1)), tf.float32)), num_samples)
-    nt = tf.div(tf.reduce_sum(tf.cast(tf.not_equal(classes, tf.equal(twin, 1)), tf.float32)), num_samples)
-    nn = tf.div(tf.reduce_sum(tf.cast(tf.not_equal(classes, tf.equal(tf.equal(twin, 0), tf.equal(correct, 0))), tf.float32)), num_samples)
+    num_samples = tf.cast(tf.size(correct_prediction), tf.float32)
+    ss = tf.div(tf.reduce_sum(tf.cast(tf.logical_and(classes, tf.equal(correct, 1)), tf.float32)), num_samples)
+    st = tf.div(tf.reduce_sum(tf.cast(tf.logical_and(classes, tf.equal(twin, 1)), tf.float32)), num_samples)
+    sn = tf.div(tf.reduce_sum(tf.cast(tf.logical_and(classes, tf.logical_and(tf.equal(twin, 0), tf.equal(correct, 0))), tf.float32)), num_samples)
+    ns = tf.div(tf.reduce_sum(tf.cast(tf.logical_and(tf.logical_not(classes), tf.equal(correct, 1)), tf.float32)), num_samples)
+    nt = tf.div(tf.reduce_sum(tf.cast(tf.logical_and(tf.logical_not(classes), tf.equal(twin, 1)), tf.float32)), num_samples)
+    nn = tf.div(tf.reduce_sum(tf.cast(tf.logical_and(tf.logical_not(classes), tf.logical_and(tf.equal(twin, 0), tf.equal(correct, 0))), tf.float32)), num_samples)
     conf_mtx = tf.stack([tf.stack([ss, st, sn]), tf.stack([ns, nt, nn])], name="conf")
 
     # Calculate loss for the forward direction in case of pre-training
@@ -171,7 +171,7 @@ def train_batch(model, data_chunk, epochs):
         sum_conf += result[3]
     sum_conf /= epochs
     res = [sum_loss / epochs, sum_acc / epochs]
-    res += [sum_conf[0, 1], sum_conf[0, 2], sum_conf[1, 0], sum_conf[1, 1], sum_conf[1, 2]]
+    res += [sum_conf[0, 0], sum_conf[0, 1], sum_conf[0, 2], sum_conf[1, 0], sum_conf[1, 1], sum_conf[1, 2]]
     return res
 
 
@@ -195,7 +195,7 @@ def transfer_training(model, data_chunk, epochs):
         sum_conf += result[3]
     sum_conf /= epochs
     res = [sum_loss/epochs, sum_acc/epochs]
-    res += [sum_conf[0, 1], sum_conf[0, 2], sum_conf[1, 0], sum_conf[1, 1], sum_conf[1, 2]]
+    res += [sum_conf[0, 0], sum_conf[0, 1], sum_conf[0, 2], sum_conf[1, 0], sum_conf[1, 1], sum_conf[1, 2]]
     return res
 
 
