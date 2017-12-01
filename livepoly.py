@@ -29,8 +29,6 @@ parser.add_argument("--training-sample-num", type=int, default=16, metavar='N',
                     help="the number of samples to use for a training episode")
 parser.add_argument("--test-sample-num", type=int, default=8, metavar='N',
                     help="the number of samples to use for testing")
-parser.add_argument("--batch-size", type=int, default=8, metavar='N',
-                    help="traditional batch size")
 parser.add_argument("--epochs", type=int, default=1, metavar='N',
                     help="traditional epoch")
 parser.add_argument("--model-name", default="model", metavar='S',
@@ -327,7 +325,6 @@ def train_nn(model_file_name, eval_file_name, model, train_func):
         line += " images_num: " + str(args.images_num)
         line += " training_sample_num: " + str(args.training_sample_num)
         line += " test_sample_num: " + str(args.test_sample_num)
-        line += " batch_size: " + str(args.batch_size)
         line += " epochs: " + str(args.epochs)
         line += " eval_file_name: " + eval_file_name
         f.write(line + '\n')

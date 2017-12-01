@@ -161,12 +161,7 @@ def check_bright(source_image, position):
     s3 = source_image[position[0], position[1] + 1] == 255
     s4 = source_image[position[0] + 1, position[1] + 1] == 255
 
-    y = np.zeros(u.output_size, dtype=np.float32)
-
-    if s1 or s2 or s3 or s4:
-        return y + 1
-
-    return y
+    return s1 or s2 or s3 or s4
 
 
 def pop_img(img):
