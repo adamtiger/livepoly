@@ -18,27 +18,30 @@ class TrainData:
         self.data = {}
         self.data['img'] = np.zeros((batch, input_size[0], input_size[1], input_size[2]), dtype=np.float32)
         self.data['sgm'] = np.zeros((batch, output_size[0], output_size[1], output_size[2]), dtype=np.float32)
+        self.data['twin'] = np.zeros((batch, output_size[0], output_size[1], output_size[2]), dtype=np.float32)
         self.batch = batch
         self.idx = 0
-
-    def batch_size(self):
-        return self.batch
 
     def get_x(self):
         return self.data['img']
 
-    def get_y(self):
+    def get_ys(self):
         return self.data['sgm']
 
+    def get_yt(self):
+        return self.data['twin']
+
     def append(self, chunk):
-        length = chunk.batch_size()
+        length = chunk.batch
         self.data['img'][self.idx:self.idx + length, :, :, :] = chunk.get_x()[:, :, :, :]
-        self.data['sgm'][self.idx:self.idx + length, :, :, :] = chunk.get_y()[:, :, :, :]
+        self.data['sgm'][self.idx:self.idx + length, :, :, :] = chunk.get_ys()[:, :, :, :]
+        self.data['twin'][self.idx:self.idx + length, :, :, :] = chunk.get_yt()[:, :, :, :]
         self.idx += length
 
-    def add(self, chunk_x, chunk_y):
-        self.data['img'][self.idx, :, :, :] = chunk_x[:, :, :]
-        self.data['sgm'][self.idx, :, :, :] = chunk_y[:, :, :]
+    def add(self, sample_x, sample_ys, sample_yt):
+        self.data['img'][self.idx, :, :, :] = sample_x[:, :, :]
+        self.data['sgm'][self.idx, :, :, :] = sample_ys[:, :, :]
+        self.data['twin'][self.idx, :, :, :] = sample_yt[:, :, :]
         self.idx += 1
 
     def clear(self):
@@ -48,7 +51,9 @@ class TrainData:
         return self.idx
 
 
+# -----------------------------------------
 # generating a unique id for file names
+
 def uid():
 
     unique_id = str(datetime.datetime.today()).replace(' ', '-')

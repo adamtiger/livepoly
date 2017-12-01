@@ -38,6 +38,9 @@ class Image:
     def get_segm_pts_list(self):
         return self.segm_pts
 
+    def get_twin_pts_list(self):
+        return self.twin_pts
+
     def __find_segmenting_points(self):
 
         self.segm_pts = []
@@ -55,8 +58,11 @@ class Image:
                     self.twin_pts.append((row, col))
 
     def __check_sizes(self):
-        if self.o.shape == self.t.shape and self.o.shape == self.s.shape:
-            raise AssertionError("Wrong sizes")
+        so = self.o.shape
+        st = self.t.shape
+        ss = self.s.shape
+        if not(so == st and so == ss):
+            raise AssertionError("Wrong sizes: " + str(so) + " " + str(st) + " " + str(ss))
 
 
 def image_from_file(orig_file, segm_file, twin_file):
@@ -67,7 +73,7 @@ def image_from_file(orig_file, segm_file, twin_file):
     return Image(orig, segm, twin)
 
 
-def sample(src, position, target_size):
+def sample(src, position):
 
     h = u.input_size[0]
     w = u.input_size[1]
@@ -144,8 +150,10 @@ def crop_out(source_image, position, target_size):  # crop a small image around 
     return img / 255.0  # normalize the image
 
 
+# -------------------------------------------------------
 # checks whether the 4 pixels next to each other contains
 # any bright pixel, the 'position' is the left top pixel
+
 def check_bright(source_image, position):
     s1 = source_image[position[0], position[1]] == 255
     s2 = source_image[position[0] + 1, position[1]] == 255
