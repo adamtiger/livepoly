@@ -1,0 +1,3 @@
+iteration: 30000 lr: 0.0001 images_num: 1 training_sample_num: 64 test_sample_num: 128 epochs: 5 eval_file_name: evals/eval_trf2017-12-04-162708.351632.csv
+train_loss train_acc train_ss train_st train_sn train_ns train_nt train_nn test_loss test_acc test_ss test_st test_sn test_ns test_nt test_nn iteration 
+0.0950408801436 0.875 0.671875 0.078125 0.015625 0.03125 0.171875 0.03125 0.182615 0.75 0.492188 0.125 0.0234375 0.101562 0.140625 0.117188 0 
