@@ -235,7 +235,7 @@ def load_model(folder_name, gpu_memory):
     # Restoring the input and output tensors.
     graph = tf.get_default_graph()
     fwd = graph.get_tensor_by_name('fwd:0')
-    tfr = graph.get_tensor_by_name('tfr:0')
+    tfr = graph.get_operation_by_name('tfr')
     x = graph.get_tensor_by_name('input:0')
     ys = graph.get_tensor_by_name('correct:0')
     yt = graph.get_tensor_by_name('twin:0')

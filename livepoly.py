@@ -316,7 +316,7 @@ def train_nn(model_file_name, eval_file_name, model, train_func):
         math_div(com_res, norm)
         com_res[0] = 0.0
         com_res[1] = 0.0
-        com_res += ["full test"]
+        com_res += ["full_test"]
         return com_res
 
     with open(eval_file_name, "w") as f:
@@ -339,7 +339,7 @@ def train_nn(model_file_name, eval_file_name, model, train_func):
 
     for i in range(args.iteration):
 
-        if i % 1 == 0:  # 500
+        if i % 500 == 0:  # 500
             print("Currently at: " + str(i))
 
         # normal samples
@@ -349,14 +349,14 @@ def train_nn(model_file_name, eval_file_name, model, train_func):
         result = train_func(model, data_chunk, args.epochs)
 
         # test
-        if i % 1 == 0:  # 500
+        if i % 500 == 0:  # 500
             test_images = choose_random_images(1, test_img_paths)
             test_set = gen_data(test_images, args.test_sample_num)
             result = result + nn.evaluate(model, test_set)
             result.append(i)
             eval_history.append(result)
 
-        if i % 1 == 0:  # 2000
+        if i % 2000 == 0:  # 2000
             save_test_results()
 
     # testing on all the test images and on all the pixels
@@ -404,6 +404,13 @@ elif args.mode == 2:
         calculate_then_save_weights(model, path, weight_file, weight_img)
 
 elif args.mode == 3:
+
+    # Set the chosen image 
+    # - the test and train is on the same image
+    # - the one on which the user is working 
+    temp = test_img_paths[args.tfr_img_id:args.tfr_img_id+3]
+    test_img_paths = temp
+    train_img_paths = temp
 
     # initialize parameters
     post_id = u.uid()
