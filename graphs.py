@@ -1,6 +1,7 @@
 import pandas
 import matplotlib.pyplot as plt
 import argparse
+import beta
 
 parser = argparse.ArgumentParser(description="Showing results.")
 parser.add_argument("--file-name",  default="eval.csv", metavar='S')
