@@ -21,7 +21,7 @@ class Grid:
     def __init__(self, size):
 
         self.size = size
-        self.grid = [0] * (size * size)
+        self.grid = [None] * (size * size)
 
     def add(self, row, col, node):
         self.grid[self.__idx(row, col)] = node
@@ -50,8 +50,8 @@ def __initializeBFS(map, pa, size):
             pm.append((row + pa[0] - size, row + pa[1] - size))  # coord (on the map)
             pm.append(None)  # parent (not known yet)
             pm.append(map[pm[1][0], pm[1][1]])  # own_weight
-            pm.append(None)  # min_weight (no minimum yet)
-            pm.append(False) # ready
+            pm.append(None)   # min_weight (no minimum yet)
+            pm.append(False)  # ready
 
             node = Node(pm[0], pm[1], pm[2], pm[3], pm[4], pm[5])
             grid.add(row, col, node)
@@ -62,7 +62,7 @@ def __initializeBFS(map, pa, size):
     return grid, queue
 
 
-def __discover(grid, node):
+def __discover(grid, node, fast):
 
     # Discovers the neighbours of a node.
     # Only not ready nodes are taken into account.
@@ -88,8 +88,15 @@ def __discover(grid, node):
             j = node.grid_coord[1] + cs
             candidate = grid.at(i, j)
 
-            if not candidate.ready:
+            if fast:
+                include = candidate.own_weight == 255  # the white pixels are the segmenting lines
+            else:
+                include = True
+
+            if not candidate.ready and include:
                 neighbors.append(candidate)
+
+    return neighbors
 
 
 def __update(node, nodes, queue):
@@ -108,12 +115,43 @@ def __update(node, nodes, queue):
 
     node.ready = True
     queue["queue"].remove[node]
-    queue["min"] = min(queue["queue"], key= lambda x: x.min_weight)
+    queue["min"] = min(queue["queue"], key=lambda x: x.min_weight)
 
 
-def bfs(map, pa, pb, size):
+def bfs(map, pa, pb, size, fast=False):
 
+    # Initialize grid and queue.
     grid, queue = __initializeBFS(map, pa, size)
+
+    # Put the first node (at pa) into the queue.
+    grid.at(size, size).min_weight = grid.at(size, size).own_weight
+    queue["queue"].append(grid.at(size, size))
+    queue["min"] = grid.at(size, size)
+
+    # Start BFS.
+    # Continue search until pb becomes ready.
+
+    while not grid.at(pa[0] - pb[0] + size, pa[1] - pb[1] + size).ready and not len(queue["queue"]) == 0:
+
+        # Choose the node with the minimum weighted path.
+        min_node = queue["min"]
+
+        neighbors = __discover(grid, min_node, fast)
+
+        __update(min_node, neighbors, queue)
+
+    # Connect the path from pb to pa.
+
+    path = []
+    node = grid.at(pa[0] - pb[0] + size, pa[1] - pb[1] + size)
+    while node is not None:
+
+        path.append(node)
+        node = node.parent
+
+    print("BFS has finished searching for minimum.")
+
+    return path
 
 
 
