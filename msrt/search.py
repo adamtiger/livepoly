@@ -5,6 +5,7 @@ with the lowest total weight between two points.
 
 import numpy as np
 
+
 class Node:
 
     def __init__(self, grid_coord, coord, parent, own_weight, min_weight, ready):
