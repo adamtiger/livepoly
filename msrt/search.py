@@ -3,6 +3,7 @@ This module provides search algorithms for finding the path
 with the lowest total weight between two points.
 '''
 
+import numpy as np
 
 class Node:
 
@@ -47,7 +48,7 @@ def __initializeBFS(map, pa, size):
 
             pm = []  # parameters of node
             pm.append((row, col))  # grid_coord
-            pm.append((row + pa[0] - size, row + pa[1] - size))  # coord (on the map)
+            pm.append((row + pa[0] - size, col + pa[1] - size))  # coord (on the map)
             pm.append(None)  # parent (not known yet)
             pm.append(map[pm[1][0], pm[1][1]])  # own_weight
             pm.append(None)   # min_weight (no minimum yet)
@@ -84,7 +85,7 @@ def __discover(grid, node, fast):
 
     for rs in row_shift:
         for cs in col_shift:
-            i = node.grid[0] + rs
+            i = node.grid_coord[0] + rs
             j = node.grid_coord[1] + cs
             candidate = grid.at(i, j)
 
@@ -111,11 +112,12 @@ def __update(node, nodes, queue):
             if n.min_weight is None:
                 queue["queue"].append(n)
             n.min_weight = temp
-            n.parent = node
 
     node.ready = True
-    queue["queue"].remove[node]
+
+    queue["queue"].remove(node)
     queue["min"] = min(queue["queue"], key=lambda x: x.min_weight)
+    queue["min"].parent = node
 
 
 def bfs(map, pa, pb, size, fast=False):
@@ -131,7 +133,7 @@ def bfs(map, pa, pb, size, fast=False):
     # Start BFS.
     # Continue search until pb becomes ready.
 
-    while not grid.at(pa[0] - pb[0] + size, pa[1] - pb[1] + size).ready and not len(queue["queue"]) == 0:
+    while not grid.at(pb[0] - pa[0] + size, pb[1] - pa[1] + size).ready and not len(queue["queue"]) == 0:
 
         # Choose the node with the minimum weighted path.
         min_node = queue["min"]
@@ -143,7 +145,7 @@ def bfs(map, pa, pb, size, fast=False):
     # Connect the path from pb to pa.
 
     path = []
-    node = grid.at(pa[0] - pb[0] + size, pa[1] - pb[1] + size)
+    node = grid.at(pb[0] - pa[0] + size, pb[1] - pa[1] + size)  # pb has coordinate on the map not on the grid
     while node is not None:
 
         path.append(node)
@@ -154,4 +156,35 @@ def bfs(map, pa, pb, size, fast=False):
     return path
 
 
+def test_bfs():
+
+    # Creating an exemplary image
+    size = 500
+    img = np.ones((size, size))
+    for p in range(101):
+        img[250 - p, 250] = 0
+
+    # Now try bfs
+    path = bfs(img, (250, 250), (150, 250), 105)
+
+    # Convert path to a list with coordinate tuples.
+    coord_path = []
+    for node in path:
+        coord_path.append(node.coord)
+
+    # The expected path.
+    expected_path = []
+    for p in range(100, -1, -1):
+        expected_path.append((250 - p, 250))
+
+    # Compare the two.
+    correct = True
+    for x, y in zip(coord_path, expected_path):
+        if not x == y:
+            correct = False
+            break
+
+    print(correct)
+    print(coord_path[0:10])
+    print(expected_path[0:10])
 
