@@ -44,6 +44,16 @@ def __initializeBFS(map, pa, size):
     # GRID
     grid_size = (size + 1) * 2  # point pa, size pieces to left and right
     grid = Grid(grid_size)  # point pa, size pieces to left and right
+
+    def weight_after_checking_grid_point_is_inside_map(row, col):
+        r = row + pa[0] - size
+        c = col + pa[1] - size
+
+        if r < 0 or r > map.shape[0] - 1 or c < 0 or c > map.shape[1] - 1:
+            return None
+        else:
+            return map[r, c]
+
     for row in range(grid_size):
         for col in range(grid_size):
 
@@ -51,7 +61,7 @@ def __initializeBFS(map, pa, size):
             pm.append((row, col))  # grid_coord
             pm.append((row + pa[0] - size, col + pa[1] - size))  # coord (on the map)
             pm.append(None)  # parent (not known yet)
-            pm.append(map[pm[1][0], pm[1][1]])  # own_weight
+            pm.append(weight_after_checking_grid_point_is_inside_map(row, col))  # own_weight
             pm.append(None)   # min_weight (no minimum yet)
             pm.append(False)  # ready
 
@@ -91,11 +101,11 @@ def __discover(grid, node, fast):
             candidate = grid.at(i, j)
 
             if fast:
-                include = candidate.own_weight == 255  # the white pixels are the segmenting lines
+                include = candidate.own_weight == 1  # the white pixels are the segmenting lines
             else:
                 include = True
 
-            if not candidate.ready and include:
+            if not candidate.ready and candidate.own_weight is not None and include:
                 neighbors.append(candidate)
 
     return neighbors
@@ -113,12 +123,12 @@ def __update(node, nodes, queue):
             if n.min_weight is None:
                 queue["queue"].append(n)
             n.min_weight = temp
+            n.parent = node
 
     node.ready = True
 
     queue["queue"].remove(node)
     queue["min"] = min(queue["queue"], key=lambda x: x.min_weight)
-    queue["min"].parent = node
 
 
 def bfs(map, pa, pb, size, fast=False):
@@ -152,9 +162,14 @@ def bfs(map, pa, pb, size, fast=False):
         path.append(node)
         node = node.parent
 
+    # Convert path to a list with coordinate tuples.
+    coord_path = []
+    for node in path:
+        coord_path.append(node.coord)
+
     print("BFS has finished searching for minimum.")
 
-    return path
+    return coord_path
 
 
 def test_bfs():
@@ -168,11 +183,6 @@ def test_bfs():
     # Now try bfs
     path = bfs(img, (250, 250), (150, 250), 105)
 
-    # Convert path to a list with coordinate tuples.
-    coord_path = []
-    for node in path:
-        coord_path.append(node.coord)
-
     # The expected path.
     expected_path = []
     for p in range(100, -1, -1):
@@ -180,12 +190,12 @@ def test_bfs():
 
     # Compare the two.
     correct = True
-    for x, y in zip(coord_path, expected_path):
+    for x, y in zip(path, expected_path):
         if not x == y:
             correct = False
             break
 
     print(correct)
-    print(coord_path[0:10])
+    print(path[0:10])
     print(expected_path[0:10])
 

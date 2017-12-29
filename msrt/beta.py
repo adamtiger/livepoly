@@ -5,11 +5,11 @@ and for calculating the corresponding probabilities.
 if only two paths exist on the image.)
 '''
 
-
 import numpy as np
 import math as m
 from scipy.stats import binom
 import matplotlib.pyplot as plt
+from msrt import curve
 
 
 # The probability that the weight of curve S has bigger weight then curve i.
@@ -27,6 +27,8 @@ def psi(ps, pi, ls, li, epsilon):
 
 # Measuring the distributions of beta in terms of the curve length on real images.
 def measure_beta(img):
+
+    # Calculating betas.
     pass
 
 
