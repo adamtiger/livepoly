@@ -12,33 +12,135 @@ import matplotlib.pyplot as plt
 from msrt import curve
 
 
+# -------------------------------------------------
 # The probability that the weight of curve S has bigger weight then curve i.
+
 def psi(ps, pi, ls, li, epsilon):
 
     ratio = int(m.ceil((ls - li * epsilon)/(1-epsilon)))
 
     probability = 0.0
     for ns in range(max(0, ratio - li), ls + 1):
-        for ni in range(max(0, ratio - ns), li + 1):
-            probability += binom.pmf(ns, ls, ps) * binom.pmf(ni, li, pi)
+        probability += binom.pmf(ns, ls, ps) * (1 - binom.cdf(ratio - ns, li, pi))
 
     return probability
 
 
+# -------------------------------------------------
 # Measuring the distributions of beta in terms of the curve length on real images.
+
 def measure_beta(img):
 
-    # Calculating betas.
-    pass
+    beta_mtx_dict = {}
+    lengths = [x for x in range(50, 301, 10)]
+
+    def measuring_one_curve(curve):
+        beta_mtx = np.zeros((2, len(curve) - 15 + 1), dtype=np.float16)
+        for i in range(beta_mtx.shape[1]):
+            beta_mtx[0, i] = 15 + i
+
+        for st in range(0, len(curve)):
+            en = st + 14
+            while en < len(curve):
+                segm_length = en - st + 1
+
+                a = max(abs(curve[st][0] - curve[en][0]), abs(curve[st][1] - curve[en][1]))
+                distance = a + 2  # distance means the number of pixels
+
+                beta = float(segm_length)/distance
+                idx = segm_length - 15
+                beta_mtx[1, idx] = max(beta, beta_mtx[1, idx])
+
+                en += 1
+
+        return beta_mtx
+
+    # Monte Carlo sampling for measuring the betas for different lengths.
+    segm_points = curve.find_segmenting_points(img)
+    for l in lengths:
+        beta_mtx_dict[l] = []
+        for cntr in range(200):
+            cv = curve.generate_curve(img, segm_points, l)
+            beta_mtx = measuring_one_curve(cv)
+            beta_mtx_dict[l].append(beta_mtx)
+
+    return beta_mtx_dict
 
 
+# -------------------------------------------------
+# Calculating the thresholds.
+
+def thresholds(epsilon, ps, pt, threshold):
+
+    lengths = [x for x in range(15, 301, 5)]
+    l_thr = []
+
+    for l in lengths:
+
+        print(str(l))
+
+        ls = [l] * 50
+        lt = [int(l * 10.0 / float(x)) for x in range(11, 51, 1)]
+
+        pst = []
+        for t, s in zip(lt, ls):
+            temp = psi(ps, pt, s, t, epsilon)
+            pst.append(temp)
+
+        # Find the minimum.
+        found = False
+        idx = 0
+        while not found:
+            if pst[idx] < threshold:
+                found = True
+            idx += 1
+
+        idx -= 1
+        l_thr.append(ls[idx] / lt[idx])
+
+    return lengths, l_thr
+
+
+# -------------------------------------------------
+# Calculating the theoretical error rate.
+
+def theoretical_error(beta_mtx_dict, l_thresholds):
+
+    error = {}
+
+    for k in beta_mtx_dict.keys():
+
+        error[k] = 0.0
+        num = 0
+        right = 0
+        for beta_mtx in beta_mtx_dict[k]:
+            num += 1
+
+            # Decide if the curve is chosen right.
+            idx = 0
+            correct = True
+            while idx < beta_mtx.shape[1] and correct:
+                idx_c = (int(beta_mtx[0, idx]) - 15) // 5
+                beta_max = l_thresholds[idx_c]
+                if beta_max < beta_mtx[1, idx]:
+                    correct = False
+
+            if correct:
+                right += 1
+
+        error[k] = 1.0 - float(right) / num
+
+    return error
+
+
+# -------------------------------------------------
 # Drawing curve for the psi values in terms of the beta.
-def psi_curve():
+
+def psi_curve(l):
 
     epsilon = 0.01
     ps = 0.8
     pt = 0.65
-    l = 100
     lt = [l] * 50
     ls = [int(x / 10 * l) for x in range(11, 51, 1)]
 
@@ -47,6 +149,18 @@ def psi_curve():
         temp = psi(ps, pt, s, t, epsilon)
         pst.append(temp)
 
-    plt.plot(ls, pst)
+    plt.plot([x / 10.0 for x in range(11, 51, 1)], pst)
     plt.show()
 
+
+def thresholds_length():
+
+    epsilon = 0.01
+    ps = 0.8
+    pt = 0.65
+    threshold = 0.95
+
+    l, l_thr = thresholds(epsilon, ps, pt, threshold)
+
+    plt.plot(l, l_thr)
+    plt.show()
