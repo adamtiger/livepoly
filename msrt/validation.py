@@ -5,7 +5,7 @@ to learn about the possible outcomes and find the desired neural network
 performance.
 '''
 
-from msrt import curve
+from msrt.curve import get_livepolyline, compare_curves
 from msrt import weights as w
 from scipy import misc
 import numpy as np
@@ -30,8 +30,8 @@ def validation_for_a_curve():
 
             for _ in range(100):
                 weight_map = w.bernoulli(piece, (ps + 1) / 10.0, (pn + 1) / 10.0, 0.01)
-                cv = curve.get_livepolyline(weight_map, (60, 1), (1, 194))
-                if not curve.compare_curves(curve_points, cv):
+                cv = get_livepolyline(weight_map, (60, 1), (1, 194))
+                if not compare_curves(curve_points, cv):
                     error[ps, pn] += 1.0
 
             error[ps, pn] /= 100.0
