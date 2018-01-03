@@ -17,13 +17,13 @@ import json
 ###################
 # Luminance
 
-def luminance(img, min_weight, med_weight):
+def luminance(img, min_weight=50, med_weight=150):
 
     # BGR to LUV then choose luminance
     # Ref.: https://docs.opencv.org/3.1.0/de/d25/imgproc_color_conversions.html
     def rgb2L(r, g, b):
 
-        rgb = np.array([[r / 255.0], [g / 255.0], [b / 255.0]]) # with normalization
+        rgb = np.array([[r / 255.0], [g / 255.0], [b / 255.0]])  # with normalization
         M = np.array([[0.412453, 0.357580, 0.180423], [0.212671, 0.715160, 0.072169], [0.019334, 0.119193, 0.950227]])
         xyz = np.matmul(M, rgb)
 
@@ -35,7 +35,7 @@ def luminance(img, min_weight, med_weight):
         return lum * 255.0/100.0
 
     # Calculate the weights
-    weights = np.zeros(img.shape)
+    weights = np.zeros((img.shape[0], img.shape[1]))
 
     for row in range(img.shape[0]):
         for col in range(img.shape[1]):
@@ -73,7 +73,6 @@ def bernoulli(piece, ps, pn, epsilon):
 
     # Generating a value for a pixel.
     def for_pixel(px):
-        weight = 0.0
         rand = np.random.random()
         if piece[px[0], px[1]] > 0:
 

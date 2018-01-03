@@ -128,7 +128,6 @@ def __update(node, nodes, queue):
     node.ready = True
 
     queue["queue"].remove(node)
-    queue["min"] = min(queue["queue"], key=lambda x: x.min_weight)
 
 
 def bfs(map, pa, pb, size, fast=False):
@@ -147,7 +146,7 @@ def bfs(map, pa, pb, size, fast=False):
     while not grid.at(pb[0] - pa[0] + size, pb[1] - pa[1] + size).ready and not len(queue["queue"]) == 0:
 
         # Choose the node with the minimum weighted path.
-        min_node = queue["min"]
+        min_node = queue["min"] = min(queue["queue"], key=lambda x: x.min_weight)
 
         neighbors = __discover(grid, min_node, fast)
 
@@ -167,7 +166,7 @@ def bfs(map, pa, pb, size, fast=False):
     for node in path:
         coord_path.append(node.coord)
 
-    print("BFS has finished searching for minimum.")
+    # print("BFS has finished searching for minimum.")
 
     return coord_path
 
