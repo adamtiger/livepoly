@@ -38,6 +38,6 @@ def validation_for_a_curve():
 
             error[ps, pn] /= 10.0
 
-    with open("validation.json", 'w') as j:
-        js.dump(error.tolist(), j)
+            with open("validation.json", 'w') as j:
+                js.dump(error.tolist(), j)
 
