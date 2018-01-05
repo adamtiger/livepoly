@@ -8,13 +8,13 @@ given length.
 import numpy as np
 from msrt import search
 from scipy import misc
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 
 # -------------------------------------------------
 # Constants:
 
-tolerance = 3  # number of pixels as a distance between curves which is tolerated
+tolerance = 10  # number of pixels as a distance between curves which is tolerated
 
 
 # -------------------------------------------
@@ -82,10 +82,10 @@ def __end_points(image, segm_points, size):
 # the curve points have value 0.
 
 def __connect_end_points(image, pa, pb):
-    map = image + 1  # To choose the shortest segmenting path.
+
     size = max(abs(pa[0] - pb[0]), abs(pa[1] - pb[1])) + 1
 
-    curve = search.bfs(map, pa, pb, size, fast=True)  # Generate curve with BFS.
+    curve = search.bfs(image, pa, pb, size, fast=True)  # Generate curve with BFS.
 
     return curve
 
@@ -181,5 +181,5 @@ def show_a_generated_sample():
     for p in curve:
         result[p[0], p[1], :] = color[:]
 
-    plt.imshow(np.float32(result))
-    plt.show()
+    #plt.imshow(np.float32(result))
+    #plt.show()
