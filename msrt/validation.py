@@ -23,20 +23,20 @@ def validation_for_a_curve():
             if piece[row, col] > 0:
                 curve_points.append((row, col))
 
-    for ps in range(1):
-        for pn in range(1):
+    for ps in range(10):
+        for pn in range(10):
 
             print("ps: " + str(ps) + " pn: " + str(pn))
 
             for cntr in range(10):
                 if cntr % 10 == 0:
-                    print(str(cntr) + "/100")
-                weight_map = w.bernoulli(piece, (ps + 1) / 1.0, (pn + 1) / 1.0, 0.01)
+                    print(str(cntr) + "/10")
+                weight_map = w.bernoulli(piece, (ps + 1) / 10.0, (pn + 1) / 10.0, 0.01)
                 cv = get_livepolyline(weight_map, (60, 1), (1, 194))
                 if not compare_curves(curve_points, cv):
                     error[ps, pn] += 1.0
 
-            error[ps, pn] /= 100.0
+            error[ps, pn] /= 10.0
 
     with open("validation.json", 'w') as j:
         js.dump(error.tolist(), j)
