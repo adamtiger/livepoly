@@ -14,6 +14,13 @@ import json as js
 import numpy as np
 
 
+# --------------------------------
+# Constants
+name_o = "example_o.png"
+name_s = "example_s.png"
+weightjson = "weights.json"
+
+
 # -------------------------------------------------
 # Measuring the error rate on a given image.
 
@@ -22,14 +29,11 @@ def measure_errorrate():
     errors_h = []
     errors_n = []
 
-    img_orig, img_segm = curve.image_reader("example_o.png", "example_s.png")
+    img_orig, img_segm = curve.image_reader(name_o, name_s)
     print("Images were read.")
 
     wh = w.luminance(img_orig)  # weight map for the heuristic
-    with open("weights.json", 'w') as j:
-        ls = np.ones(img_segm.shape).tolist()
-        js.dump(ls, j)
-    wn = w.neural("weights.json")  # weight map for the neural
+    wn = w.neural(weightjson)  # weight map for the neural
     print("Weights are determined.")
 
     lengths = [20, 50, 70, 80, 90, 100, 110, 120, 130, 140, 150, 200]
@@ -47,8 +51,11 @@ def measure_errorrate():
 
         for _ in range(s):
             curve1 = curve.generate_curve(img_segm, segm_points, l)
+            print('curve_1')
             curve2_h = curve.get_livepolyline(wh, curve1[0], curve1[-1])
+            print('curve_2h')
             curve2_n = curve.get_livepolyline(wn, curve1[0], curve1[-1])
+            print('curve_2n')
 
             if not curve.compare_curves(curve1, curve2_h):
                 eh += 1.0
@@ -66,4 +73,42 @@ def measure_errorrate():
         js.dump(result, j)
 
 
+# -------------------------------------------------
+# Measuring the error rate on a given image.
+# Acceleration with multiprocessing
 
+
+def get_data():
+
+    img_orig, img_segm = curve.image_reader(name_o, name_s)
+    print("Images were read.")
+
+    wh = w.luminance(img_orig)  # weight map for the heuristic
+    with open(weightjson, 'w') as j:
+        ls = np.ones(img_segm.shape).tolist()
+        js.dump(ls, j)
+    wn = w.neural(weightjson)  # weight map for the neural
+    print("Weights are determined.")
+
+    segm_points = curve.find_segmenting_points(img_segm)
+
+    return wh, wn, img_segm, segm_points
+
+
+def mp_measure_errorrate(length, sample, wh, wn, img_segm, segm_points):
+
+    eh = 0.0  # error rate for the heuristic case
+    en = 0.0  # error rate for the neural case
+
+    for _ in range(sample):
+        curve1 = curve.generate_curve(img_segm, segm_points, length)
+        curve2_h = curve.get_livepolyline(wh, curve1[0], curve1[-1])
+        curve2_n = curve.get_livepolyline(wn, curve1[0], curve1[-1])
+
+        if not curve.compare_curves(curve1, curve2_h):
+            eh += 1.0
+
+        if not curve.compare_curves(curve1, curve2_n):
+            en += 1.0
+
+    return eh / sample, en / sample

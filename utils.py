@@ -7,6 +7,7 @@ common tasks.
 
 import numpy as np
 import datetime
+import csv
 
 input_size = (86, 86, 1)
 output_size = (1, 1, 1)
@@ -60,3 +61,13 @@ def uid():
     unique_id = unique_id.replace(':', '')
 
     return unique_id
+
+
+# -----------------------------------------
+# appending a new line at the end of the given csv file
+
+def csv_append(f_name, data):
+
+    with open(f_name, 'a', newline='\n') as file:
+        wo = csv.writer(file)
+        wo.writerow(data)

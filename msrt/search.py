@@ -101,7 +101,7 @@ def __discover(grid, node, fast):
             candidate = grid.at(i, j)
 
             if fast:
-                include = candidate.own_weight == 1  # the white pixels are the segmenting lines
+                include = candidate.own_weight == 0  # the white pixels are the segmenting lines
             else:
                 include = True
 

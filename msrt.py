@@ -7,9 +7,10 @@ This module responsible for starting the measurements:
 '''
 
 import argparse
-import csv
 import multiprocessing as mp
+import utils
 from msrt import validation as vld
+from msrt import errorrate as ert
 
 parser = argparse.ArgumentParser(description="Measurements of important metrics")
 
@@ -23,6 +24,7 @@ args = parser.parse_args()
 # --------------------------------------------
 # Constants
 vld_f_nm = 'validation.csv'
+err_f_nm = 'errors.csv'
 
 
 # --------------------------------------------
@@ -31,6 +33,59 @@ vld_f_nm = 'validation.csv'
 def set_lock(l):
     global lock
     lock = l
+
+
+def mp_start(title, data, func):
+    print(title)
+
+    # Get the data
+    inputs = data()
+
+    # This process takes a lot of time
+    # multiprocessing is necessary.
+
+    print('Start multiprocessing.')
+    l = mp.Lock()
+    pool = mp.Pool(processes=args.trds, initializer=set_lock, initargs=(l,))
+    pool.map(func, inputs)
+    pool.close()
+    pool.join()
+
+    print('----- Finished! -----')
+
+
+# --------------------------------------------
+# Functions for the modes
+
+def data_mode2():
+    lengths = [20, 50, 70, 80, 90, 100, 110, 120, 130, 140, 150, 200]
+    samples = [50, 50, 50, 50, 50, 50, 50, 40, 40, 25, 25, 25]
+    wh, wn, img_segm, segm_points = ert.get_data()
+
+    inputs = []
+    for l, s in zip(lengths, samples):
+        inputs.append((l, s, wh, wn, img_segm, segm_points))
+
+    return inputs
+
+
+def process_mode2(arg):
+    length = arg[0]
+    sample = arg[1]
+    wh = arg[2]
+    wn = arg[3]
+    img_segm = arg[4]
+    segm_points = arg[5]
+
+    eh, en = ert.mp_measure_errorrate(length, sample, wh, wn, img_segm, segm_points)
+
+    lock.acquire()
+
+    utils.csv_append(err_f_nm, [length, eh, en])
+
+    print('Length: ' + str(length))
+
+    lock.release()
 
 
 def data_mode3():
@@ -57,9 +112,7 @@ def process_mode3(arg):
     lock.acquire()
 
     # write into csv
-    with open(vld_f_nm, 'a', newline='\n') as file:
-        wrt_obj = csv.writer(file)
-        wrt_obj.writerow(data)
+    utils.csv_append(vld_f_nm, data)
 
     print("ps: " + str(ps) + " pn: " + str(pn))
 
@@ -76,27 +129,12 @@ if __name__ == "__main__":
     # MODE 2: Error rate measurements
     elif args.mode == 2:
 
-        pass
+        mp_start('----- MODE 2: VALIDATING PROBS -----', data_mode2, process_mode2)
 
     # MODE 3: Validation probabilities
     elif args.mode == 3:
 
-        print('----- MODE 3: VALIDATING PROBS -----')
-
-        # Get the data
-        inputs = data_mode3()
-
-        # This process takes a lot of time
-        # multiprocessing is necessary.
-
-        print('Start multiprocessing.')
-        l = mp.Lock()
-        pool = mp.Pool(processes=args.trds, initializer=set_lock, initargs=(l,))
-        pool.map(process_mode3, inputs)
-        pool.close()
-        pool.join()
-
-        print('----- Finished! -----')
+        mp_start('----- MODE 3: VALIDATING PROBS -----', data_mode3, process_mode3)
 
     # MODE 4: Theoretical probabilities
     elif args.mode == 4:

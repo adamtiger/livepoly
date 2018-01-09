@@ -8,7 +8,7 @@ given length.
 import numpy as np
 from msrt import search
 from scipy import misc
-#from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 
 # -------------------------------------------------
@@ -133,6 +133,7 @@ def get_livepolyline(weight, p0, p1):
     size = max(abs(p0[0] - p1[0]), abs(p0[1] - p1[1]))
     return search.bfs(weight, p0, p1, size)
 
+
 # -------------------------------------------
 # Read two images as a pair (original, segmented).
 
@@ -153,7 +154,7 @@ def image_reader(name_original, name_segmented):
     for row in range(img_s.shape[0]):
         for col in range(img_s.shape[1]):
             if img_s[row, col] == 0:
-                img_s[row, col] = 255
+                img_s[row, col] = 1
             else:
                 img_s[row, col] = 0
 
@@ -175,11 +176,11 @@ def show_a_generated_sample():
     result = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.float32)
     for row in range(result.shape[0]):
         for col in range(result.shape[1]):
-            result[row, col, :] = img[row, col]/255
+            result[row, col, :] = img[row, col]
 
     color = np.array([0.5, 0, 0])
     for p in curve:
         result[p[0], p[1], :] = color[:]
 
-    #plt.imshow(np.float32(result))
-    #plt.show()
+    plt.imshow(np.float32(result))
+    plt.show()
