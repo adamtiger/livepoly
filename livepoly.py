@@ -396,7 +396,7 @@ elif args.mode == 2:
     # Calculate the weights
     model = nn.load_model(args.model_name, args.memory)
 
-    for idx in range(0, len(test_img_paths), 2):
+    for idx in range(0, len(test_img_paths), 3):
 
         path = test_img_paths[idx]
         weight_file = path.replace(".png", "_w.json")
