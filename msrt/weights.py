@@ -59,8 +59,8 @@ def neural(file_name):
     # The neural map is saved as a json file.
     with open(file_name, 'r') as w:
         mtx = json.load(w)
-
-    weights = np.array(mtx)
+    temp = np.array(mtx)
+    weights = 1.0 - temp[42:temp.shape[0]-42, 42:temp.shape[1]-42]
     return weights
 
 

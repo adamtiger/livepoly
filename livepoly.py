@@ -16,7 +16,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Live-poyline training algorithm")
 
 parser.add_argument("--mode", type=int, default=0, metavar='N',
-                    help="0: training, 1: test, 2: weight calculation")
+                    help="0: training, 1: test, 2: weight calculation, 3: transfer learning")
 parser.add_argument("--memory", type=float, default=0.5, metavar='N',
                     help="the fraction of the memory")
 parser.add_argument("--iteration", type=int, default=5, metavar='N',

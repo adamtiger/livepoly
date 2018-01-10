@@ -3,7 +3,6 @@ This module responsible for starting the measurements:
     1. Beta measurements. mode = 1
     2. Error rate measuring for neural and heuristic. mode = 2
     3. Validation probabilities for a given curve. mode = 3
-    4. Theoretical probabilities for a given curve. mode = 4
 '''
 
 import argparse
@@ -15,7 +14,7 @@ from msrt import errorrate as ert
 parser = argparse.ArgumentParser(description="Measurements of important metrics")
 
 parser.add_argument("--mode", type=int, default=0, metavar='N',
-                    help="1: beta, 2: error rate, 3: validation 4: theoretical")
+                    help="1: beta, 2: error rate, 3: validation")
 parser.add_argument("--trds", type=int, default=4, metavar='N',
                     help="number of threads")
 
@@ -121,7 +120,7 @@ def process_mode3(arg):
 
 if __name__ == "__main__":
 
-    # MODE 1: Beta measurements
+    # MODE 1: Beta measurements and theoretical errors
     if args.mode == 1:
 
         pass
@@ -135,11 +134,6 @@ if __name__ == "__main__":
     elif args.mode == 3:
 
         mp_start('----- MODE 3: VALIDATING PROBS -----', data_mode3, process_mode3)
-
-    # MODE 4: Theoretical probabilities
-    elif args.mode == 4:
-
-        pass
 
     else:
         print('Wrong mode selection')

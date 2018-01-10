@@ -137,7 +137,7 @@ def get_livepolyline(weight, p0, p1):
 # -------------------------------------------
 # Read two images as a pair (original, segmented).
 
-def image_reader(name_original, name_segmented):
+def image_reader(name_original, name_segmented, crop=False):
 
     img_o = None
     img_s = None
@@ -157,6 +157,10 @@ def image_reader(name_original, name_segmented):
                 img_s[row, col] = 1
             else:
                 img_s[row, col] = 0
+
+    if crop:
+        img_o = img_o[42:img_o.shape[0]-42, 42:img_o.shape[1]-42]
+        img_s = img_s[42:img_s.shape[0]-42, 42:img_s.shape[1]-42]
 
     return img_o, img_s
 

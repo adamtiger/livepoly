@@ -80,7 +80,7 @@ def measure_errorrate():
 
 def get_data():
 
-    img_orig, img_segm = curve.image_reader(name_o, name_s)
+    img_orig, img_segm = curve.image_reader(name_o, name_s, crop=True)
     print("Images were read.")
 
     wh = w.luminance(img_orig)  # weight map for the heuristic
