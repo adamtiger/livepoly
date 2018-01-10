@@ -84,9 +84,6 @@ def get_data():
     print("Images were read.")
 
     wh = w.luminance(img_orig)  # weight map for the heuristic
-    with open(weightjson, 'w') as j:
-        ls = np.ones(img_segm.shape).tolist()
-        js.dump(ls, j)
     wn = w.neural(weightjson)  # weight map for the neural
     print("Weights are determined.")
 
