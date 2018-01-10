@@ -33,7 +33,7 @@ parser.add_argument("--epochs", type=int, default=1, metavar='N',
                     help="traditional epoch")
 parser.add_argument("--model-name", default="model", metavar='S',
                     help="the name of the model which will be loaded")
-parser.add_argument("--tfr-img-id", default=0, metavar='N',
+parser.add_argument("--tfr-img-id", type=int, default=0, metavar='N',
                     help="the image on which transfer learning is applied")
 
 
