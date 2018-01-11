@@ -62,7 +62,7 @@ def mp_start(title, data, func):
 
 def data_mode1():
     _, piece_img = curve.image_reader(None, vld.img_name)
-    piece = curve.find_segmenting_points(piece_img)
+    piece = curve.get_livepolyline(piece_img, vld.p0, vld.p1)
 
     lmin = 20
     threshold = 0.5
@@ -71,8 +71,8 @@ def data_mode1():
     beta_mtx_dict = {'0': [beta_mtx]}
 
     inputs = []
-    for ps in [x/20.0 for x in range(0, 21)]:
-        for pn in [y/20.0 for y in range(0, 21)]:
+    for ps in [x/20.0 for x in range(20, -1, -1)]:
+        for pn in [y/20.0 for y in range(20, -1, -1)]:
             inputs.append([beta_mtx_dict, ps, pn, threshold])
 
     return inputs
