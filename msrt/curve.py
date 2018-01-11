@@ -144,23 +144,27 @@ def image_reader(name_original, name_segmented, crop=False):
 
     if name_original is not None:
         img_o = np.array(misc.imread(name_original, mode='RGB'), dtype=int)
+
+        if crop:
+            img_o = img_o[42:img_o.shape[0] - 42, 42:img_o.shape[1] - 42]
+
     if name_segmented is not None:
         img_s = np.array(misc.imread(name_segmented, mode='L'), dtype=int)
 
-    if not img_o.shape[0] == img_s.shape[0] or not img_o.shape[1] == img_s.shape[1]:
-        raise AssertionError("Wrong image sizes!")
+        if crop:
+            img_s = img_s[42:img_s.shape[0] - 42, 42:img_s.shape[1] - 42]
 
-    # Invert image (the search algorithm looks for minimum)
-    for row in range(img_s.shape[0]):
-        for col in range(img_s.shape[1]):
-            if img_s[row, col] == 0:
-                img_s[row, col] = 1
-            else:
-                img_s[row, col] = 0
+        # Invert image (the search algorithm looks for minimum)
+        for row in range(img_s.shape[0]):
+            for col in range(img_s.shape[1]):
+                if img_s[row, col] == 0:
+                    img_s[row, col] = 1
+                else:
+                    img_s[row, col] = 0
 
-    if crop:
-        img_o = img_o[42:img_o.shape[0]-42, 42:img_o.shape[1]-42]
-        img_s = img_s[42:img_s.shape[0]-42, 42:img_s.shape[1]-42]
+    if img_o is not None and img_s is not None:
+        if not img_o.shape[0] == img_s.shape[0] or not img_o.shape[1] == img_s.shape[1]:
+            raise AssertionError("Wrong image sizes!")
 
     return img_o, img_s
 
