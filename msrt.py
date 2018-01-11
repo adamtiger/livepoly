@@ -83,7 +83,7 @@ def process_mode1(arg):
     pn = arg[2]
     threshold = arg[3]
 
-    beta_max = beta.thresholds(0.01, ps, pn, threshold)
+    beta_max = beta.thresholds_simple(0.01, ps, pn)
 
     if beta_max > beta_max_on_curve:
         error = 0.0
