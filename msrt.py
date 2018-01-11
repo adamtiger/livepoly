@@ -12,7 +12,7 @@ from msrt import validation as vld
 from msrt import errorrate as ert
 from msrt import beta
 from msrt import curve
-from scipy import misc
+
 
 parser = argparse.ArgumentParser(description="Measurements of important metrics")
 
@@ -64,7 +64,7 @@ def data_mode1():
     _, piece_img = curve.image_reader(None, vld.img_name)
     piece = curve.find_segmenting_points(piece_img)
 
-    lmin = 20
+    lmin = 50
     threshold = 0.5
 
     beta_mtx = beta.measuring_one_curve(piece, lmin)
