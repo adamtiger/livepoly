@@ -130,6 +130,7 @@ def theoretical_error(beta_mtx_dict, l_thresholds):
                 beta_max = l_thresholds[idx_c]
                 if beta_max is not None and beta_max < beta_mtx[1, idx]:
                     correct = False
+                idx += 1
 
             if correct:
                 right += 1
