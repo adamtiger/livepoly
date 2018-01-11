@@ -62,7 +62,7 @@ def mp_start(title, data, func):
 
 def data_mode1():
     _, piece_img = curve.image_reader(None, vld.img_name)
-    piece = curve.get_livepolyline(piece_img, vld.p0, vld.p1)
+    piece = curve.find_segmenting_points(piece_img)
 
     lmin = 20
     threshold = 0.5
@@ -172,6 +172,13 @@ def data_mode4():
         for pn in [y/20.0 for y in range(0, 21)]:
             inputs.append([beta_mtx_dict, ps, pn, threshold])
 
+    data = ['ps', 'pn']
+    for k in beta_mtx_dict.keys():
+        data.append(k)
+
+    utils.csv_append(theor_err_f_nm, data)
+    print('Data was assembled.')
+
     return inputs
 
 
@@ -183,11 +190,14 @@ def process_mode4(arg):
 
     _, thrs = beta.thresholds(0.01, ps, pn, threshold)
 
-    error = beta.theoretical_error(beta_mtx_dict, thrs)['0']
+    error = beta.theoretical_error(beta_mtx_dict, thrs)
+    data = [ps, pn]
+    for k in error.keys():
+        data.append(error[k])
 
     lock.acquire()
 
-    utils.csv_append(theor_err_f_nm, [ps, pn, error])
+    utils.csv_append(theor_err_f_nm, data)
 
     print('ps: ' + str(ps) + ' pn: ' + str(pn))
 

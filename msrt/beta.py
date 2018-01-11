@@ -57,7 +57,7 @@ def measuring_one_curve(curve, lmin):
 def measure_beta(img, lmin):
 
     beta_mtx_dict = {}
-    lengths = [x for x in range(lmin, 301, 10)]
+    lengths = [x for x in range(lmin, 201, 10)]
 
     # Monte Carlo sampling for measuring the betas for different lengths.
     segm_points = curve.find_segmenting_points(img)
