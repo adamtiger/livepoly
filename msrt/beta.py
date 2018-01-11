@@ -81,8 +81,6 @@ def thresholds(epsilon, ps, pt, threshold):
 
     for l in lengths:
 
-        print(str(l))
-
         ls = [l] * 50
         lt = [int(l * 10.0 / float(x)) for x in range(11, 51, 1)]
 
