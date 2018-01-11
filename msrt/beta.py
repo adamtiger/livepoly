@@ -92,13 +92,17 @@ def thresholds(epsilon, ps, pt, threshold):
         # Find the minimum.
         found = False
         idx = 0
-        while not found:
+        while not found and idx < len(pst):
             if pst[idx] < threshold:
                 found = True
             idx += 1
 
         idx -= 1
-        l_thr.append(ls[idx] / lt[idx])
+
+        if found:
+            l_thr.append(ls[idx] / lt[idx])
+        else:
+            l_thr.append(None)
 
     return lengths, l_thr
 
@@ -124,7 +128,7 @@ def theoretical_error(beta_mtx_dict, l_thresholds):
             while idx < beta_mtx.shape[1] and correct:
                 idx_c = (int(beta_mtx[0, idx]) - 15) // 5
                 beta_max = l_thresholds[idx_c]
-                if beta_max < beta_mtx[1, idx]:
+                if beta_max is not None and beta_max < beta_mtx[1, idx]:
                     correct = False
 
             if correct:
