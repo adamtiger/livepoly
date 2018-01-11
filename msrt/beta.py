@@ -106,6 +106,7 @@ def thresholds(epsilon, ps, pt, threshold):
         pst = []
         for t, s in zip(lt, ls):
             temp = psi(ps, pt, s, t, epsilon)
+            temp = temp / (10.0 * (1.0 - temp) + temp)
             pst.append(temp)
 
         # Find the minimum.
@@ -190,8 +191,8 @@ def theoretical_error(beta_mtx_dict, l_thresholds):
 def psi_curve(l):
 
     epsilon = 0.01
-    ps = 0.8
-    pt = 0.65
+    ps = 0.95
+    pt = 0.2
     lt = [l] * 50
     ls = [int(x / 10 * l) for x in range(11, 51, 1)]
 
