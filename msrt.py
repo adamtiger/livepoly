@@ -10,6 +10,8 @@ import multiprocessing as mp
 import utils
 from msrt import validation as vld
 from msrt import errorrate as ert
+from msrt import beta
+from scipy import misc
 
 parser = argparse.ArgumentParser(description="Measurements of important metrics")
 
@@ -24,6 +26,7 @@ args = parser.parse_args()
 # Constants
 vld_f_nm = 'validation.csv'
 err_f_nm = 'errors.csv'
+theor_err_f_nm = 'th_validation.csv'
 
 
 # --------------------------------------------
@@ -55,6 +58,41 @@ def mp_start(title, data, func):
 
 # --------------------------------------------
 # Functions for the modes
+
+def data_mode1():
+    curve = misc.imread(vld.img_name, mode='L')
+    lmin = 20
+    threshold = 0.5
+
+    beta_mtx = beta.measuring_one_curve(curve, lmin)
+    beta_mtx_dict = {'0': beta_mtx}
+
+    inputs = []
+    for ps in [x/20.0 for x in range(0, 21)]:
+        for pn in [y/20.0 for y in range(0, 21)]:
+            inputs.append([beta_mtx_dict, ps, pn, threshold])
+
+    return inputs
+
+
+def process_mode1(arg):
+    beta_mtx_dict = arg[0]
+    ps = arg[1]
+    pn = arg[2]
+    threshold = arg[3]
+
+    _, thrs = beta.thresholds(0.01, ps, pn, threshold)
+
+    error = beta.theoretical_error(beta_mtx_dict, thrs)['0']
+
+    lock.acquire()
+
+    utils.csv_append(theor_err_f_nm, [ps, pn, error])
+
+    print('ps: ' + str(ps) + ' pn: ' + str(pn))
+
+    lock.release()
+
 
 def data_mode2():
     lengths = [20, 50, 70, 80, 90, 100, 110, 120, 130, 140, 150, 200]
@@ -120,17 +158,17 @@ def process_mode3(arg):
 
 if __name__ == "__main__":
 
-    # MODE 1: Beta measurements and theoretical errors
+    # MODE 1: Theoretical error rate on a single curve
     if args.mode == 1:
 
-        pass
+        mp_start('----- MODE 1: THEORETICAL ERROR ON 1 CURVE -----', data_mode1, process_mode1)
 
     # MODE 2: Error rate measurements
     elif args.mode == 2:
 
         mp_start('----- MODE 2: VALIDATING PROBS -----', data_mode2, process_mode2)
 
-    # MODE 3: Validation probabilities
+    # MODE 3: Measured error rate on a single curve. Validation probabilities
     elif args.mode == 3:
 
         mp_start('----- MODE 3: VALIDATING PROBS -----', data_mode3, process_mode3)

@@ -27,33 +27,37 @@ def psi(ps, pi, ls, li, epsilon):
 
 
 # -------------------------------------------------
+# Measuring the distributions of beta in terms of the curve length on a curve.
+
+def measuring_one_curve(curve, lmin):
+    beta_mtx = np.zeros((2, len(curve) - lmin + 1), dtype=np.float16)
+    for i in range(beta_mtx.shape[1]):
+        beta_mtx[0, i] = lmin + i
+
+    for st in range(0, len(curve)):
+        en = st + lmin - 1
+        while en < len(curve):
+            segm_length = en - st + 1
+
+            a = max(abs(curve[st][0] - curve[en][0]), abs(curve[st][1] - curve[en][1]))
+            distance = a + 2  # distance means the number of pixels
+
+            beta = float(segm_length)/distance
+            idx = segm_length - lmin
+            beta_mtx[1, idx] = max(beta, beta_mtx[1, idx])
+
+            en += 1
+
+    return beta_mtx
+
+
+# -------------------------------------------------
 # Measuring the distributions of beta in terms of the curve length on real images.
 
-def measure_beta(img):
+def measure_beta(img, lmin):
 
     beta_mtx_dict = {}
-    lengths = [x for x in range(50, 301, 10)]
-
-    def measuring_one_curve(curve):
-        beta_mtx = np.zeros((2, len(curve) - 15 + 1), dtype=np.float16)
-        for i in range(beta_mtx.shape[1]):
-            beta_mtx[0, i] = 15 + i
-
-        for st in range(0, len(curve)):
-            en = st + 14
-            while en < len(curve):
-                segm_length = en - st + 1
-
-                a = max(abs(curve[st][0] - curve[en][0]), abs(curve[st][1] - curve[en][1]))
-                distance = a + 2  # distance means the number of pixels
-
-                beta = float(segm_length)/distance
-                idx = segm_length - 15
-                beta_mtx[1, idx] = max(beta, beta_mtx[1, idx])
-
-                en += 1
-
-        return beta_mtx
+    lengths = [x for x in range(lmin, 301, 10)]
 
     # Monte Carlo sampling for measuring the betas for different lengths.
     segm_points = curve.find_segmenting_points(img)
@@ -61,7 +65,7 @@ def measure_beta(img):
         beta_mtx_dict[l] = []
         for cntr in range(200):
             cv = curve.generate_curve(img, segm_points, l)
-            beta_mtx = measuring_one_curve(cv)
+            beta_mtx = measuring_one_curve(cv, lmin)
             beta_mtx_dict[l].append(beta_mtx)
 
     return beta_mtx_dict
