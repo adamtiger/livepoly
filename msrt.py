@@ -11,6 +11,7 @@ import utils
 from msrt import validation as vld
 from msrt import errorrate as ert
 from msrt import beta
+from msrt import curve
 from scipy import misc
 
 parser = argparse.ArgumentParser(description="Measurements of important metrics")
@@ -60,11 +61,13 @@ def mp_start(title, data, func):
 # Functions for the modes
 
 def data_mode1():
-    curve = misc.imread(vld.img_name, mode='L')
+    _, piece_img = curve.image_reader(None, vld.img_name)
+    piece = curve.find_segmenting_points(piece_img)
+
     lmin = 20
     threshold = 0.5
 
-    beta_mtx = beta.measuring_one_curve(curve, lmin)
+    beta_mtx = beta.measuring_one_curve(piece, lmin)
     beta_mtx_dict = {'0': [beta_mtx]}
 
     inputs = []
@@ -152,6 +155,41 @@ def process_mode3(arg):
     utils.csv_append(vld_f_nm, data)
 
     print("ps: " + str(ps) + " pn: " + str(pn))
+
+    lock.release()
+
+
+def data_mode4():
+    _, img = curve.image_reader(None, ert.name_s)
+    lmin = 20
+    threshold = 0.5
+
+    beta_mtx = beta.measure_beta(img, lmin)
+    beta_mtx_dict = {'0': [beta_mtx]}
+
+    inputs = []
+    for ps in [x/20.0 for x in range(0, 21)]:
+        for pn in [y/20.0 for y in range(0, 21)]:
+            inputs.append([beta_mtx_dict, ps, pn, threshold])
+
+    return inputs
+
+
+def process_mode4(arg):
+    beta_mtx_dict = arg[0]
+    ps = arg[1]
+    pn = arg[2]
+    threshold = arg[3]
+
+    _, thrs = beta.thresholds(0.01, ps, pn, threshold)
+
+    error = beta.theoretical_error(beta_mtx_dict, thrs)['0']
+
+    lock.acquire()
+
+    utils.csv_append(theor_err_f_nm, [ps, pn, error])
+
+    print('ps: ' + str(ps) + ' pn: ' + str(pn))
 
     lock.release()
 
