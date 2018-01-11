@@ -51,6 +51,25 @@ def measuring_one_curve(curve, lmin):
     return beta_mtx
 
 
+def measuring_one_curve_simple(curve, lmin):
+
+    beta_max = 0.0
+    for st in range(0, len(curve)):
+        en = st + lmin - 1
+        while en < len(curve):
+            segm_length = en - st + 1
+
+            a = max(abs(curve[st][0] - curve[en][0]), abs(curve[st][1] - curve[en][1]))
+            distance = a + 2  # distance means the number of pixels
+
+            beta = float(segm_length) / distance
+            beta_max = max(beta, beta_max)
+
+            en += 1
+
+    return beta_max
+
+
 # -------------------------------------------------
 # Measuring the distributions of beta in terms of the curve length on real images.
 
@@ -105,6 +124,31 @@ def thresholds(epsilon, ps, pt, threshold):
             l_thr.append(None)
 
     return lengths, l_thr
+
+
+def thresholds_simple(epsilon, ps, pt):
+
+    threshold = 0.5
+
+    ls = [300] * 50
+    lt = [int(300 * 10.0 / float(x)) for x in range(11, 51, 1)]
+
+    pst = []
+    for t, s in zip(lt, ls):
+        temp = psi(ps, pt, s, t, epsilon)
+        pst.append(temp)
+
+    # Find the minimum.
+    found = False
+    idx = 0
+    while not found and idx < len(pst):
+        if pst[idx] < threshold:
+            found = True
+        idx += 1
+
+    idx -= 1
+
+    return ls[idx] / lt[idx]
 
 
 # -------------------------------------------------
