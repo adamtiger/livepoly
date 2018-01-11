@@ -21,8 +21,7 @@ def psi(ps, pi, ls, li, epsilon):
 
     probability = 0.0
     for ns in range(max(0, ratio - li), ls + 1):
-        #probability += binom.pmf(ns, ls, ps) * (1 - binom.cdf(ratio - ns, li, pi))
-        probability += binom.pmf(ns, ls, ps) * binom.cdf(ratio - ns, li, pi)
+        probability += binom.pmf(ns, ls, ps) * (1 - binom.cdf(max(ratio - ns, 0), li, pi))
 
     return probability
 
