@@ -65,7 +65,7 @@ def data_mode1():
     threshold = 0.5
 
     beta_mtx = beta.measuring_one_curve(curve, lmin)
-    beta_mtx_dict = {'0': beta_mtx}
+    beta_mtx_dict = {'0': [beta_mtx]}
 
     inputs = []
     for ps in [x/20.0 for x in range(0, 21)]:

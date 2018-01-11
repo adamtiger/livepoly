@@ -30,7 +30,7 @@ def psi(ps, pi, ls, li, epsilon):
 # Measuring the distributions of beta in terms of the curve length on a curve.
 
 def measuring_one_curve(curve, lmin):
-    beta_mtx = np.zeros((2, len(curve) - lmin + 1), dtype=np.float16)
+    beta_mtx = np.zeros((2, len(curve) - lmin + 1), dtype=np.float32)
     for i in range(beta_mtx.shape[1]):
         beta_mtx[0, i] = lmin + i
 
