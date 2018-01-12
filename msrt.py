@@ -62,7 +62,7 @@ def mp_start(title, data, func):
 
 def data_mode1():
     _, piece_img = curve.image_reader(None, vld.img_name)
-    piece = curve.find_segmenting_points(piece_img)
+    piece = curve.get_livepolyline(piece_img, vld.p0, vld.p1)
 
     lmin = 30
     threshold = 0.8
