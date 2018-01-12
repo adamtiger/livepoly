@@ -216,7 +216,7 @@ def data_mode5():
     inputs = bne.get_data()
 
     data = ['ps', 'pn']
-    for k in inputs[3].keys():
+    for k in inputs[0][3].keys():
         data.append(k)
 
     utils.csv_append(bne_err_f_m, data)
