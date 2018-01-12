@@ -45,7 +45,7 @@ def mp_bernoulli_error(input):
     img = input[2]
     curves = input[3]
 
-    e_rate = {} # error rate
+    e_rate = {}  # error rate
 
     # Monte Carlo on Bernoulli weight map
     for n in range(1, 5):
@@ -65,7 +65,7 @@ def mp_bernoulli_error(input):
 
             temp_err = temp_err / num
 
-            if length in curves:
+            if length in e_rate:
                 e_rate[length] = (e_rate[length] * (n - 1) * num + temp_err * num) / (n * num)
             else:
                 e_rate[length] = temp_err
