@@ -229,7 +229,7 @@ def process_mode5(arg):
 
     err_rate = bne.mp_bernoulli_error(arg)
 
-    data = [args[0], args[1]]
+    data = [arg[0], arg[1]]
     for v in err_rate.values():
         data.append(v)
 
