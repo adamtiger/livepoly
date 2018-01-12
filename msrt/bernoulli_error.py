@@ -52,7 +52,7 @@ def mp_bernoulli_error(input):
 
         weight_map = weights.bernoulli(img, ps, pn, 0.01)
 
-        for length in curves.keys:
+        for length in curves.keys():
 
             temp_err = 0.0
             num = 0.0
