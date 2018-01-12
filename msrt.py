@@ -12,12 +12,13 @@ from msrt import validation as vld
 from msrt import errorrate as ert
 from msrt import beta
 from msrt import curve
+from msrt import bernoulli_error as bne
 
 
 parser = argparse.ArgumentParser(description="Measurements of important metrics")
 
 parser.add_argument("--mode", type=int, default=0, metavar='N',
-                    help="1: beta, 2: error rate, 3: validation")
+                    help="1: beta, 2: error rate, 3: validation, 4: theoretical on img, 5: simulation")
 parser.add_argument("--trds", type=int, default=4, metavar='N',
                     help="number of threads")
 
@@ -28,6 +29,7 @@ args = parser.parse_args()
 vld_f_nm = 'validation.csv'
 err_f_nm = 'errors.csv'
 theor_err_f_nm = 'th_validation.csv'
+bne_err_f_m = 'bne_errors.csv'
 
 
 # --------------------------------------------
@@ -90,7 +92,7 @@ def process_mode1(arg):
     #else:
         #error = 1.0
 
-    thresolds = beta.thresholds(0.01, ps, pn, threshold)
+    _, thresolds = beta.thresholds(0.01, ps, pn, threshold)
     error = beta.theoretical_error(beta_max_dict, thresolds)['0']
 
     lock.acquire()
@@ -209,6 +211,37 @@ def process_mode4(arg):
     lock.release()
 
 
+def data_mode5():
+
+    inputs = bne.get_data()
+
+    data = ['ps', 'pn']
+    for k in inputs[3].keys():
+        data.append(k)
+
+    utils.csv_append(bne_err_f_m, data)
+    print('Data was assembled.')
+
+    return inputs
+
+
+def process_mode5(arg):
+
+    err_rate = bne.mp_bernoulli_error(arg)
+
+    data = [args[0], args[1]]
+    for v in err_rate.values():
+        data.append(v)
+
+    lock.acquire()
+
+    utils.csv_append(bne_err_f_m, data)
+
+    print('ps: ' + str(arg[0]) + ' pn: ' + str(arg[1]))
+
+    lock.release()
+
+
 if __name__ == "__main__":
 
     # MODE 1: Theoretical error rate on a single curve
@@ -225,6 +258,16 @@ if __name__ == "__main__":
     elif args.mode == 3:
 
         mp_start('----- MODE 3: VALIDATING PROBS -----', data_mode3, process_mode3)
+
+    # MODE 4: Measuring the error rate with theoretical methods on real image
+    elif args.mode == 4:
+
+        mp_start('----- MODE 4: THEORETICAL ERROR ON IMAGE -----', data_mode4, process_mode4)
+
+    # MODE 4: Measuring the error rate with theoretical methods on real image
+    elif args.mode == 5:
+
+        mp_start('----- MODE 5: Bernoulli ERROR ON IMAGE -----', data_mode5, process_mode5)
 
     else:
         print('Wrong mode selection')
