@@ -106,7 +106,6 @@ def thresholds(epsilon, ps, pt, threshold):
         pst = []
         for t, s in zip(lt, ls):
             temp = psi(ps, pt, s, t, epsilon)
-            temp = temp / (10.0 * (1.0 - temp) + temp)
             pst.append(temp)
 
         # Find the minimum.
@@ -137,8 +136,7 @@ def thresholds_simple(epsilon, ps, pt):
     pst = []
     for t, s in zip(lt, ls):
         temp = psi(ps, pt, s, t, epsilon)
-        temp = psi(ps, pt, s, t, epsilon)
-        temp = temp / (10.0 * (1.0 - temp) + temp)
+        #temp = temp / (10.0 * (1.0 - temp) + temp)
         pst.append(temp)
 
     # Find the minimum.

@@ -14,9 +14,9 @@ import json as js
 
 # --------------------------------
 # Constants
-img_name = "curve1.png" # curve2.png, curve3.png
-p0 = (60, 1)  # 1 -> (60, 1), 2 -> (28, 1), 3 -> (183, 99)
-p1 = (1, 194)  # 1 -> (1, 194), 2 -> (45, 127), 3 -> (1, 6)
+img_name = "curve3.png" # curve2.png, curve3.png
+p0 = (182, 98)  # 1 -> (60, 1), 2 -> (28, 1), 3 -> (182, 98)
+p1 = (1, 6)  # 1 -> (1, 194), 2 -> (45, 126), 3 -> (1, 6)
 
 
 # This function does the whole measurements but it is slow.

@@ -49,3 +49,12 @@ def heat_map(table):
     plt.show(fig)
 
 heat_map(read_validation_file('v.csv'))
+
+'''
+beta = 0.9
+eps = 0.5
+pn = [x/100.0 for x in range(100)]
+ps = [(beta - eps)/(beta*(1-eps)) - 1/beta * y for y in pn]
+plt.plot(pn, ps)
+plt.show()
+'''

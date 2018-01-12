@@ -64,31 +64,34 @@ def data_mode1():
     _, piece_img = curve.image_reader(None, vld.img_name)
     piece = curve.find_segmenting_points(piece_img)
 
-    lmin = 50
-    threshold = 0.5
+    lmin = 30
+    threshold = 0.8
 
-    beta_max = beta.measuring_one_curve_simple(piece, lmin)
+    beta_max = beta.measuring_one_curve(piece, lmin)
+    beta_max_dict = {'0': [beta_max]}
 
     inputs = []
     for ps in [x/20.0 for x in range(20, -1, -1)]:
         for pn in [y/20.0 for y in range(20, -1, -1)]:
-            inputs.append([beta_max, ps, pn, threshold])
+            inputs.append([beta_max_dict, ps, pn, threshold])
 
     return inputs
 
 
 def process_mode1(arg):
-    beta_max_on_curve = arg[0]
+    beta_max_dict = arg[0]
     ps = arg[1]
     pn = arg[2]
     threshold = arg[3]
 
-    beta_max = beta.thresholds_simple(0.01, ps, pn)
+    #beta_max = beta.thresholds_simple(0.01, ps, pn)
+    #if beta_max > beta_max_on_curve:
+        #error = 0.0
+    #else:
+        #error = 1.0
 
-    if beta_max > beta_max_on_curve:
-        error = 0.0
-    else:
-        error = 1.0
+    thresolds = beta.thresholds(0.01, ps, pn, threshold)
+    error = beta.theoretical_error(beta_max_dict, thresolds)['0']
 
     lock.acquire()
 
