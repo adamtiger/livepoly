@@ -30,8 +30,8 @@ def get_data():
         curves[l] = c
 
     inputs = []
-    for ps in [0.3, 0.5, 0.65, 0.75, 0.8, 0.85, 0.9, 0.95]:
-        for pn in [0.3, 0.5, 0.65, 0.75, 0.8, 0.85, 0.9, 0.95]:
+    for ps in [0.75, 0.8, 0.85, 0.9, 0.95]:
+        for pn in [0.75, 0.8, 0.85, 0.9, 0.95]:
             inputs.append([ps, pn, img, curves])
 
     return inputs
