@@ -74,7 +74,7 @@ def bernoulli(piece, ps, pn, epsilon):
     # Generating a value for a pixel.
     def for_pixel(px):
         rand = np.random.random()
-        if piece[px[0], px[1]] > 0:
+        if piece[px[0], px[1]] == 0:
 
             if rand < ps:
                 weight = epsilon
