@@ -107,11 +107,11 @@ def process_mode1(arg):
 def data_mode2():
     lengths = [20, 50, 70, 80, 90, 100, 110, 120, 130, 140, 150, 200]
     samples = [1000, 500, 200, 200, 200, 100, 100, 100, 100, 100, 100, 50]
-    wh, wn, img_segm, segm_points = ert.get_data()
+    wh, wn, wt, img_segm, segm_points = ert.get_data()
 
     inputs = []
     for l, s in zip(lengths, samples):
-        inputs.append((l, s, wh, wn, img_segm, segm_points))
+        inputs.append((l, s, wh, wn, wt, img_segm, segm_points))
 
     return inputs
 
@@ -121,14 +121,15 @@ def process_mode2(arg):
     sample = arg[1]
     wh = arg[2]
     wn = arg[3]
+    wt = arg[4]
     img_segm = arg[4]
     segm_points = arg[5]
 
-    eh, en = ert.mp_measure_errorrate(length, sample, wh, wn, img_segm, segm_points)
+    eh, en, et = ert.mp_measure_errorrate(length, sample, wh, wn, wt, img_segm, segm_points)
 
     lock.acquire()
 
-    utils.csv_append(err_f_nm, [length, eh, en])
+    utils.csv_append(err_f_nm, [length, eh, en, et])
 
     print('Length: ' + str(length))
 

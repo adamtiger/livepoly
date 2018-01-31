@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
+import numpy as np
 
 
 parser = argparse.ArgumentParser(description="Showing results.")
@@ -15,7 +16,7 @@ args = parser.parse_args()
 
 # Read the evaluation metrics data from file
 def read_evaluation_file(f_name):
-    return pd.read_table(f_name, sep=" ", header=1)
+    return pd.read_csv(f_name, sep=' ', header=1, skipfooter=1)
 
 
 # Creating figures from the data
@@ -35,6 +36,16 @@ def test_acc(table):
     return table.plot(x="iteration", y="test_acc", kind="scatter", title="Test accuracy function")
 
 
+def p_st(table):
+    table['ps'] = table['test_ss'] / (table['test_ss'] + table['test_ns'])
+    table['pt'] = (table['test_nt'] + table['test_nn'])/ (table['test_st'] + table['test_sn'] +
+                                                          table['test_nt'] + table['test_nn'])
+    fig1 = table.plot(x="iteration", y="ps", kind="scatter", title="ps curve")
+    fig2 = table.plot(x="iteration", y="pt", kind="scatter", title="pt curve")
+    plt.show(fig1)
+    plt.show(fig2)
+
+
 # -------------------------------------------
 # VALIDATION METRICS for both measured and theoretical
 
@@ -48,13 +59,78 @@ def heat_map(table):
     fig = table.plot.scatter(x='pn', y='ps', c='error', xlim=(0.0, 1.0), ylim=(0.0, 1.0), marker='s', s=230, cmap='winter')
     plt.show(fig)
 
-heat_map(read_validation_file('v.csv'))
 
-'''
-beta = 0.9
-eps = 0.5
-pn = [x/100.0 for x in range(100)]
-ps = [(beta - eps)/(beta*(1-eps)) - 1/beta * y for y in pn]
-plt.plot(pn, ps)
-plt.show()
-'''
+# -------------------------------------------
+# ERROR RATES for the heuristic, neural and neural with transfer
+
+def read_errorrate_file(f_name):
+    return pd.read_csv(f_name, sep=',', header=None, names=['length', 'heuristic', 'neural'])
+
+
+def heur_neur(names):
+
+    fig, axes = plt.subplots(nrows=2, ncols=2)
+    pos = [(0, 0), (0, 1), (1, 0), (1, 1)]
+    for nm, p in zip(names, pos):
+        table = (read_errorrate_file(nm)
+                 .set_index('length')
+                 .sort_index())
+        table.plot(ax=axes[p[0], p[1]])
+        axes[p[0], p[1]].set_title(nm)
+
+    plt.show(fig)
+
+
+def al_error(names):
+
+    frame = {'Names': names, 'Neural': [], 'Heuristic': []}
+    for nm in names:
+        tab = read_errorrate_file(nm)
+        tab['heuristic'] = tab['heuristic'].apply(func=lambda x: 1 - x)
+        al_heur = (tab['length'] * tab['heuristic']).sum() / tab['heuristic'].sum()
+        frame['Heuristic'].append(al_heur)
+
+        tab['neural'] = tab['neural'].apply(func=lambda x: 1 - x)
+        al_neur = (tab['length'] * tab['neural']).sum() / tab['neural'].sum()
+        frame['Neural'].append(al_neur)
+
+    df = pd.DataFrame(frame).set_index('Names')
+
+    return df
+
+
+al_error(['FangShan11.csv', 'HuNan.csv', 'QuYangC.csv', 'YeCheng5.csv'])
+
+
+# -------------------------------------------
+# THEORETICAL ERROR RATES
+
+def read_theoretical_errors(f_name):
+    return pd.read_csv(f_name)
+
+
+def heat_map_th(f_name):
+
+    df = read_theoretical_errors(f_name)
+    df_pspt = df[['ps', 'pn']]
+    df_length = df.drop(['ps', 'pn'], axis=1)
+
+    cols = np.zeros((len(df_length.columns)))
+    for i in range(len(df_length.columns)):
+        cols[i] = float(df_length.columns[i])
+
+    df_length['norm'] = df_length.apply(func=lambda x: 1-x).sum(axis=1)
+
+    df_length['wsum'] = (df.drop(['ps', 'pn'], axis=1)
+                         .apply(func=lambda x: (1-x) * cols, axis=1)
+                         .sum(axis=1))
+
+    print(df_length)
+    df_length['al'] = df_length['wsum'] / df_length['norm']
+
+    result = df_pspt.merge(df_length, left_index=True, right_index=True)
+    result = result[['ps', 'pn', 'al']]
+
+    fig = result.plot.scatter(x='pn', y='ps', c='al', xlim=(0.0, 1.0), ylim=(0.0, 1.0), marker='s', s=230,
+                             cmap='winter')
+    plt.show(fig)

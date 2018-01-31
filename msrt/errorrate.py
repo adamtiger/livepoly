@@ -19,6 +19,7 @@ import numpy as np
 name_o = "example_o.png"
 name_s = "example_s.png"
 weightjson = "weights.json"
+trfweightjson = 'trfweights.json'
 
 
 # -------------------------------------------------
@@ -28,12 +29,14 @@ def measure_errorrate():
 
     errors_h = []
     errors_n = []
+    errors_t = []
 
     img_orig, img_segm = curve.image_reader(name_o, name_s)
     print("Images were read.")
 
     wh = w.luminance(img_orig)  # weight map for the heuristic
     wn = w.neural(weightjson)  # weight map for the neural
+    wt = w.neural(trfweightjson) # weight map for the transfer
     print("Weights are determined.")
 
     lengths = [20, 50, 70, 80, 90, 100, 110, 120, 130, 140, 150, 200]
@@ -47,6 +50,7 @@ def measure_errorrate():
 
         eh = 0.0  # error rate for the heuristic case
         en = 0.0  # error rate for the neural case
+        et = 0.0  # error rate for the neural case with transfer learning
         cntr = 0.0  # counter for the samples
 
         for _ in range(s):
@@ -56,6 +60,8 @@ def measure_errorrate():
             print('curve_2h')
             curve2_n = curve.get_livepolyline(wn, curve1[0], curve1[-1])
             print('curve_2n')
+            curve2_t = curve.get_livepolyline(wt, curve1[0], curve1[-1])
+            print('curve_2t')
 
             if not curve.compare_curves(curve1, curve2_h):
                 eh += 1.0
@@ -63,13 +69,17 @@ def measure_errorrate():
             if not curve.compare_curves(curve1, curve2_n):
                 en += 1.0
 
+            if not curve.compare_curves(curve1, curve2_t):
+                et += 1.0
+
             cntr += 1.0
 
         errors_h.append(eh / cntr)
         errors_n.append(en / cntr)
+        errors_t.append(et / cntr)
 
     with open("errors.json", 'w') as j:
-        result = {"heur": errors_h, "neur": errors_n}
+        result = {"heur": errors_h, "neur": errors_n, 'tfr': errors_t}
         js.dump(result, j)
 
 
@@ -85,22 +95,25 @@ def get_data():
 
     wh = w.luminance(img_orig)  # weight map for the heuristic
     wn = w.neural(weightjson)  # weight map for the neural
+    wt = w.neural(trfweightjson)  # weight map for the transfer
     print("Weights are determined.")
 
     segm_points = curve.find_segmenting_points(img_segm)
 
-    return wh, wn, img_segm, segm_points
+    return wh, wn, wt, img_segm, segm_points
 
 
-def mp_measure_errorrate(length, sample, wh, wn, img_segm, segm_points):
+def mp_measure_errorrate(length, sample, wh, wn, wt, img_segm, segm_points):
 
     eh = 0.0  # error rate for the heuristic case
     en = 0.0  # error rate for the neural case
+    et = 0.0  # error rate for the neural case with transfer learning
 
     for _ in range(sample):
         curve1 = curve.generate_curve(img_segm, segm_points, length)
         curve2_h = curve.get_livepolyline(wh, curve1[0], curve1[-1])
         curve2_n = curve.get_livepolyline(wn, curve1[0], curve1[-1])
+        curve2_t = curve.get_livepolyline(wt, curve1[0], curve1[-1])
 
         if not curve.compare_curves(curve1, curve2_h):
             eh += 1.0
@@ -108,4 +121,7 @@ def mp_measure_errorrate(length, sample, wh, wn, img_segm, segm_points):
         if not curve.compare_curves(curve1, curve2_n):
             en += 1.0
 
-    return eh / sample, en / sample
+        if not curve.compare_curves(curve1, curve2_t):
+            et += 1.0
+
+    return eh / sample, en / sample, et / sample
