@@ -122,8 +122,8 @@ def process_mode2(arg):
     wh = arg[2]
     wn = arg[3]
     wt = arg[4]
-    img_segm = arg[4]
-    segm_points = arg[5]
+    img_segm = arg[5]
+    segm_points = arg[6]
 
     eh, en, et = ert.mp_measure_errorrate(length, sample, wh, wn, wt, img_segm, segm_points)
 
