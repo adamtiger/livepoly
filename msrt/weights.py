@@ -1,5 +1,5 @@
 '''
-This module responsible to providing the
+This module is responsible to providing the
 necessary weight maps under the live-polyline.
 
 Possible weight maps:
@@ -14,7 +14,7 @@ import math as m
 import json
 
 
-###################
+# -------------------------------------------
 # Luminance
 
 def luminance(img, min_weight=50, med_weight=150):
@@ -51,7 +51,7 @@ def luminance(img, min_weight=50, med_weight=150):
     return weights
 
 
-###################
+# -------------------------------------------
 # Neural
 
 def neural(file_name):
@@ -64,7 +64,7 @@ def neural(file_name):
     return weights
 
 
-###################
+# -------------------------------------------
 # Random
 
 def bernoulli(piece, ps, pn, epsilon):

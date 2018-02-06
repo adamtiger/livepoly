@@ -5,7 +5,7 @@ the training.
 There are functions for:
  test purposes
  image pre-processing
- pool for storing the images
+ pool for storing the images.
 '''
 
 import numpy as np
@@ -152,7 +152,7 @@ def crop_out(source_image, position, target_size):  # crop a small image around 
 
 
 # -------------------------------------------------------
-# checks whether the 4 pixels next to each other contains
+# Checks whether the 4 pixels next to each other contains
 # any bright pixel, the 'position' is the left top pixel
 
 def check_bright(source_image, position):

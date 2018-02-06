@@ -53,7 +53,7 @@ class TrainData:
 
 
 # -----------------------------------------
-# generating a unique id for file names
+# Generating a unique id for file names
 
 def uid():
 
@@ -64,7 +64,7 @@ def uid():
 
 
 # -----------------------------------------
-# appending a new line at the end of the given csv file
+# Appending a new line at the end of the given csv file
 
 def csv_append(f_name, data):
 

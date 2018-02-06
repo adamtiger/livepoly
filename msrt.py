@@ -2,7 +2,9 @@
 This module responsible for starting the measurements:
     1. Beta measurements. mode = 1
     2. Error rate measuring for neural and heuristic. mode = 2
-    3. Validation probabilities for a given curve. mode = 3
+    3. Validation probabilities for a single curve. mode = 3
+    4. Theoretical errors calculated from beta. mode = 4
+    5. Theoretical errors calculated from Bernoulli generated weights. mode = 5
 '''
 
 import argparse
@@ -245,27 +247,27 @@ def process_mode5(arg):
 
 if __name__ == "__main__":
 
-    # MODE 1: Theoretical error rate on a single curve
+    # MODE 1: Beta on a single curve
     if args.mode == 1:
 
-        mp_start('----- MODE 1: THEORETICAL ERROR ON 1 CURVE -----', data_mode1, process_mode1)
+        mp_start('----- MODE 1: BETAS ON 1 CURVE -----', data_mode1, process_mode1)
 
     # MODE 2: Error rate measurements
     elif args.mode == 2:
 
-        mp_start('----- MODE 2: VALIDATING PROBS -----', data_mode2, process_mode2)
+        mp_start('----- MODE 2: ERROR RATES -----', data_mode2, process_mode2)
 
     # MODE 3: Measured error rate on a single curve. Validation probabilities
     elif args.mode == 3:
 
         mp_start('----- MODE 3: VALIDATING PROBS -----', data_mode3, process_mode3)
 
-    # MODE 4: Measuring the error rate with theoretical methods on real image
+    # MODE 4: Measuring the error rate with theoretical methods (betas) on real image
     elif args.mode == 4:
 
-        mp_start('----- MODE 4: THEORETICAL ERROR ON IMAGE -----', data_mode4, process_mode4)
+        mp_start('----- MODE 4: THEORETICAL ERROR ON IMAGE FROM BETA -----', data_mode4, process_mode4)
 
-    # MODE 4: Measuring the error rate with theoretical methods on real image
+    # MODE 4: Measuring the error rate with bernoulli on real image
     elif args.mode == 5:
 
         mp_start('----- MODE 5: Bernoulli ERROR ON IMAGE -----', data_mode5, process_mode5)

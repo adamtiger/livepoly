@@ -369,7 +369,7 @@ def train_nn(model_file_name, eval_file_name, model, train_func):
 
 if args.mode == 0:
 
-    # initialize paramters
+    # initialize parameters
     post_id = u.uid()
     model_file_name = models_folder + "model" + post_id + "/model"
     eval_file_name = evaluations_folder + "eval" + post_id + ".csv"

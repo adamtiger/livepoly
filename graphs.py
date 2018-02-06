@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
 import numpy as np
+from scipy.interpolate import griddata
 import math
 
 
@@ -148,6 +149,8 @@ def read_theoretical_errors(f_name):
 def heat_map_th(f_name):
 
     df = read_theoretical_errors(f_name)
+
+
     df_pspt = df[['ps', 'pn']]
     df_length = df.drop(['ps', 'pn'], axis=1)
 
@@ -167,6 +170,14 @@ def heat_map_th(f_name):
     result = df_pspt.merge(df_length, left_index=True, right_index=True)
     result = result[['ps', 'pn', 'al']]
 
-    fig = result.plot.scatter(x='pn', y='ps', c='al', xlim=(0.0, 1.0), ylim=(0.0, 1.0), marker='s', s=230,
-                             cmap='winter')
+    xi = np.linspace(0.0, 1.0, 20)
+    yi = np.linspace(0.0, 1.0, 20)
+    Z = griddata((result['ps'], result['pn']), result['al'], (xi[None,:], yi[:,None]), method='linear')
+
+    fig = plt.contour(xi, yi, Z, 15, linewidths=0.5, colors='k')
+    #fig = plt.contourf(xi, yi, Z, 15, cmap=plt.cm.jet)
+
+    #fig = plt.imshow(Z, interpolation=None, cmap='winter',
+     #                origin='lower', extent=[0, 1, 0, 1],
+      #               vmax=abs(Z).max(), vmin=-abs(Z).max())
     plt.show(fig)

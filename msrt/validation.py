@@ -19,6 +19,7 @@ p0 = (182, 98)  # 1 -> (60, 1), 2 -> (28, 1), 3 -> (182, 98)
 p1 = (1, 6)  # 1 -> (1, 194), 2 -> (45, 126), 3 -> (1, 6)
 
 
+# -------------------------------------------
 # This function does the whole measurements but it is slow.
 def validation_for_a_curve():
 
@@ -46,7 +47,8 @@ def validation_for_a_curve():
                 js.dump(error.tolist(), j)
 
 
-# These functions for supporting the multiprocessing solutions.
+# -------------------------------------------
+# These functions are for supporting the multiprocessing solutions.
 def get_piece_and_sgm_points():
 
     _, piece = curve.image_reader(None, img_name)
