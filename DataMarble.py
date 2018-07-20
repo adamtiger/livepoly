@@ -16,12 +16,15 @@ class DataMarble:
     # Initialization BLOCK
     # ------------------------------
 
-    def __init__(self, folder_name, split_ratio=0.7, window_size=85):
+    def __init__(self, folder_name, split_ratio=0.7, window_size=85, pool_update_freq=50):
 
         self.number_images(folder_name)
         self.preprocess_images()
         self.split_data_test_train(split_ratio)
+
         self.window_size = window_size
+        self.pool_update_freq = pool_update_freq
+        self.pool_updates = 0
 
     def number_images(self, folder_name):
         self.folder_name = folder_name
@@ -41,8 +44,10 @@ class DataMarble:
         self.test_set = [seq[idx] for idx in range(split_idx, self.n_imgs)]
         return self.train_set, self.test_set  # return for outer usage (comfort)
 
-    def preprocess_images(self): # TODO: leave points which are too close to the border, save points for NONE as well
+    def preprocess_images(self):
         path = self.folder_name + '_processed_copy'
+        half_wnd_sz = (self.window_size - 1) // 2
+
         if not os.path.isdir(path):
             os.mkdir(path)
         else:
@@ -52,26 +57,34 @@ class DataMarble:
 
         meta_data = dict()
 
-        for item in range(self.n_imgs * 3):
+        for item in range(self.n_imgs):
 
-            temp_img = imread(self.folder_name + '/' + self.img_names[item], as_gray=True)
-            for ending in ['_s.', '_t.']:  # checking for segmenting and twin crystal points
-                if self.img_names[item].find(ending) != -1:
-                    points = []
-                    for r in temp_img.shape[0]:
-                        for c in temp_img.shape[1]:
-                            if temp_img[r, c] > 250:  # choosing the segmentation/twin points
-                                  points.append((r, c))
+            temp_img_o = imread(self.folder_name + '/' + self.img_names[3 * item], as_gray=True)
+            temp_img_s = imread(self.folder_name + '/' + self.img_names[3 * item + 1], as_gray=True)
+            temp_img_t = imread(self.folder_name + '/' + self.img_names[3 * item + 2], as_gray=True)
 
-                    meta_data[item] = {'name': self.img_names[item], 'points': points, 'num_points': len(points)}
+            points_none = []
+            points_s = []
+            points_t = []
+            for r in range(half_wnd_sz, temp_img_o.shape[0] - half_wnd_sz):
+                for c in range(half_wnd_sz, temp_img_o.shape[1] - half_wnd_sz):
+                    if temp_img_s[r, c] > 250:  # separating the segmentation/twin/none points
+                        points_s.append((r, c))
+                    elif temp_img_t[r, c] > 250:
+                        points_t.append((r, c))
+                    else:
+                        points_none.append((r, c))
 
-            imsave(path + '/' + self.img_names[item], temp_img)
+            meta_data[item] = {'none': points_none, 'segm': points_s, 'twin': points_t}
+
+            imsave(path + '/' + self.img_names[3 * item], temp_img_o)
+            imsave(path + '/' + self.img_names[3 * item + 1], temp_img_s)
+            imsave(path + '/' + self.img_names[3 * item + 2], temp_img_t)
 
         with open("meta_data.json", "w") as wf:
             json.dump(json.dumps(meta_data, indent=4), wf)
 
         self.meta_data = meta_data
-
         self.processed_folder = path
 
 
@@ -98,31 +111,59 @@ class DataMarble:
             self.test_img_pool.append(self.read_image(id))
             self.test_img_pool.append(id)
 
-    def __crop_general(self, id, img):
-        rc = np.random.choice(self.meta_data[id]['points'])
+    def __crop_general(self, img, rc):
         width_r = (rc[0] - (self.window_size - 1) // 2, img.shape[0] - (rc[0] + (self.window_size - 1) // 2))
         width_c = (rc[1] - (self.window_size - 1) // 2, img.shape[1] - (rc[1] + (self.window_size - 1) // 2))
         return crop(img, crop_width=(width_r, width_c), copy=True)
 
     def crop_segm(self, id, img):
-        return self.__crop_general(id + 1, img)
+        rc = np.random.choice(self.meta_data[id]['segm'])
+        return self.__crop_general(img, rc)
 
     def crop_twin(self, id, img):
-        return self.__crop_general(id + 2, img)
+        rc = np.random.choice(self.meta_data[id]['twin'])
+        return self.__crop_general(img, rc)
 
     def crop_none(self, id, img):
-        return self.__crop_general(id, img)
+        rc = np.random.choice(self.meta_data[id]['none'])
+        return self.__crop_general(img, rc)
 
 
     # ------------------------------
     # Function for training BLOCK
     # ------------------------------
 
-    def train_batch(self, batch_size):
-        pass
+    def train_batch(self, batch_size, n):
+        if self.pool_updates % self.pool_update_freq == 0:
+            self.random_images_train(n)
 
-    def test_batch(self, batch_size):
-        pass
+        data_X = np.zeros((batch_size, self.window_size, self.window_size, 1), dtype=np.float32)
+        data_Y = np.zeros((batch_size, 3), dtype=np.float32)
+
+        idx = 0
+        while idx < batch_size:
+            for crop_fv in [self.crop_segm, self.crop_twin, self.crop_none]:
+                data_X[idx] = crop_fv(self.training_id_pool[idx], self.training_img_pool[idx])
+                data_Y[idx] = np.array([0, 1, 0], dtype=np.float32)
+                idx += 1
+                if idx == batch_size:
+                    return data_X, data_Y
+
+    def test_batch(self, batch_size, n):
+        if self.pool_updates % self.pool_update_freq == 0:
+            self.random_images_test(n)
+
+        data_X = np.zeros((batch_size, self.window_size, self.window_size, 1), dtype=np.float32)
+        data_Y = np.zeros((batch_size, 3), dtype=np.float32)
+
+        idx = 0
+        while idx < batch_size:
+            for crop_fv, target in zip([self.crop_segm, self.crop_twin, self.crop_none], [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
+                data_X[idx] = crop_fv(self.test_id_pool[idx], self.test_img_pool[idx])
+                data_Y[idx] = np.array(target, dtype=np.float32)
+                idx += 1
+                if idx == batch_size:
+                    return data_X, data_Y
 
 
     # ------------------------------
@@ -130,7 +171,13 @@ class DataMarble:
     # ------------------------------
 
     def number_segmpoints_image(self, image_name):
-        pass
+        id = self.img_names.index(image_name)
+        return len(self.meta_data[id]['segm'])
 
-    def number_allpoints_image(self, image_name):
-        pass
+    def number_twinpoints_image(self, image_name):
+        id = self.img_names.index(image_name)
+        return len(self.meta_data[id]['twin'])
+
+    def number_nonepoints_image(self, image_name):
+        id = self.img_names.index(image_name)
+        return len(self.meta_data[id]['none'])
