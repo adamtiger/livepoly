@@ -6,7 +6,7 @@ gym==0.9.3
 html5lib==0.9999999
 idna==2.6
 Markdown==2.6.9
-numpy==1.13.1
+numpy==1.22.0
 olefile==0.44
 Pillow==4.2.1
 pkg-resources==0.0.0
